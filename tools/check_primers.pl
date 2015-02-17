@@ -17,14 +17,15 @@ my %code = qw{W [AT] S [CG] M [AC] K [GT] R [AG] Y [CT]
 my $check = join '|', keys %code;
 
 # grab the primer and convert to a sensible regex
-my $regex = $primer
+my $regex = $primer;
 $regex =~ s/($check)/$code{$1}/g;
 
 my $entries = 0;
 my $matches = 0;
 while (<>) {
 	next unless $. % 4 == 2;
-	$matches += 1 if /${primer}/;
+	print;
+	$matches += 1 if /${regex}/;
 	$entries += 1;
 }
 
