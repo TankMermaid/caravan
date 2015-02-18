@@ -5,7 +5,7 @@ command-line interface
 '''
 
 import argparse, sys
-import check_intersect, convert_fastq, remove_primers, barcodes, derep, usearch, tax, table, parse, submit
+import check_intersect, remove_primers, barcodes, derep, usearch, tax, table, parse, submit
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="caravan: a 16S pipeline", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -26,11 +26,11 @@ if __name__ == '__main__':
     p.add_argument('--output', '-o', default='merge.fq', help='merged fastq')
     p.set_defaults(func=usearch.Usearcher().merge)
 
-    p = subparser('remove_primers', help='trim forward and/or reverse primers')
-    p.add_argument('fastq', help='input fastq')
+    p = subparser('primers', help='trim forward and/or reverse primers')
     p.add_argument('forward_primer', help='forward primer sequence')
+    p.add_argument('fastq', help='input fastq')
     p.add_argument('--max_primer_diffs', '-m', default=1, type=int, help='number of mismatched bases allowed to match primer')
-    p.add_argument('--reverse_primer', '-q', help='reverse primer sequence')
+    p.add_argument('--reverse_primer', '-q', help='reverse primer sequence, oriented so that it matches the reverse reads')
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output fastq')
     p.set_defaults(func=remove_primers.PrimerRemover)
 

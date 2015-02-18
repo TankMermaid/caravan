@@ -24,7 +24,6 @@ my $entries = 0;
 my $matches = 0;
 while (<>) {
 	next unless $. % 4 == 2;
-	print;
 	$matches += 1 if /${regex}/;
 	$entries += 1;
 }
