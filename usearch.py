@@ -3,6 +3,7 @@ usearch wrapper. implements a nice parser that has more helpful help messages.
 '''
 
 import argparse, os, sys, subprocess, StringIO
+from Bio import SeqRecord, SeqIO, Seq
 
 class Usearcher:
     def __init__(self, dry=False):
@@ -109,5 +110,39 @@ class Usearcher:
         if not_matched is not None: cmd += ['-notmatched', not_matched]
         if fasta_pairs is not None: cmd += ['-fastapairs', fasta_pairs]
         if no_hits: cmd += ['-output_no_hits']
+
+        self.run(cmd)
+
+    def short_search(self, fastx, db, out, max_diffs=1, sid=0.0, strand='plus'):
+        '''usearch for short, well-aligned sequences. e.g., for index reads'''
+
+        cmd = ['usearch', '-search_global', fastx, '-db', db, '-strand', strand, '-userout', out, '-id', sid,
+            '-fulldp', '-maxdiffs', max_diffs, '-leftjust', '-rightjust', '-userfields', 'query+target']
+
+        self.run(cmd)
+
+    def primer_search(self, primers_fasta, fastx, output, max_diffs):
+        '''search for oligos like primers'''
+
+        # first check that the primers fasta has the expected content
+        primers = [r for r in SeqIO.parse(primers_fasta, 'fasta')]
+
+        if primers[0].id != 'forward':
+            raise RuntimeError("primers fasta {} should have a first entry 'forward', not '{}'".format(primers_fasta, primers[0].id))
+
+        if len(primers) == 1:
+            userfields = 'query+qlo+qhi'
+            strand = 'plus'
+        elif len(primers) == 2:
+            if primers[1].id != 'reverse':
+                raise RuntimeError("primers fasta {} should have a second entry 'reverse_rc', not '{}'".format(primers_fasta, primers[1].id))
+            userfields = 'query+target+qstrand+qlo+qhi'
+            strand = 'both'
+        else:
+            raise RuntimeError("primers fasta {} should have at most two entries".format(primers_fasta))
+
+        cmd = ['usearch', '-search_oligodb', fastx, '-db', primers_fasta, '-userout', output,
+            '-userfields', userfields, '-strand', strand, '-maxdiffs', max_diffs, '-maxhits', 2]
+        print " ".join([str(x) for x in cmd])
 
         self.run(cmd)
