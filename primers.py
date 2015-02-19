@@ -17,7 +17,14 @@ hit)
 from Bio import SeqRecord, SeqIO, Seq
 
 class TrimmedSequences():
+    '''class for iterating through fastq and trimming'''
+
     def __init__(self, trims, fastq_records, reverse):
+        '''
+        trims : dict
+            if forward, {record id => primer index}
+            if reverse, {record id => [start, end index]}
+        '''
         self.trims = trims
         self.fastq_records = fastq_records
         self.reverse = reverse
@@ -34,9 +41,10 @@ class TrimmedSequences():
         if self.reverse:
             return record[trim_idx[0]: trim_idx[1]]
         else:
-            return record[trim_idx]
+            return record[trim_idx:]
 
     def is_valid_record(self, rid):
+        '''does this record id have a corresponding trim entry?'''
         if self.reverse:
             return (rid in self.trims and all([idx is not None for idx in self.trims[rid]]))
         else:
@@ -77,12 +85,15 @@ class PrimerRemover():
 
     @staticmethod
     def parse_trim_file(trim_records, reverse):
+        '''parse file produced by find_primers command'''
+
         trims = {}
         if reverse:
             for record in trim_records:
                 rid, primer, strand, start_idx, end_idx = record.split()
 
-
+                # check that primer and strand are in agreement
+                # either fill in or create and entry [start index, end index]
                 if primer == 'forward' and strand == '+':
                     if rid in trims:
                         trims[rid][0] = int(end_idx)
@@ -94,6 +105,7 @@ class PrimerRemover():
                     else:
                         trims[rid] = [None, int(start_idx) - 1]
         else:
+            # just add the start index
             for record in trim_records:
                 rid, end_idx = record.split()
                 trims[rid] = int(end_idx)

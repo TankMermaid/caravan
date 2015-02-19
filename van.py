@@ -34,8 +34,8 @@ if __name__ == '__main__':
     p.set_defaults(func=usearch.Usearcher().primer_search)
 
     p = subparser('trim_primers', help='trim located primers')
-    p.add_argument('trim_file')
-    p.add_argument('fastq')
+    p.add_argument('trim_file', help='trim file output by find_primers')
+    p.add_argument('fastq', help='trimmed fastq')
     p.add_argument('--output', '-o', default='out.fq')
     p.set_defaults(func=primers.PrimerRemover)
 

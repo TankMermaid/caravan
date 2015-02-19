@@ -131,11 +131,11 @@ class Usearcher:
             raise RuntimeError("primers fasta {} should have a first entry 'forward', not '{}'".format(primers_fasta, primers[0].id))
 
         if len(primers) == 1:
-            userfields = 'query+qlo+qhi'
+            userfields = 'query+qhi'
             strand = 'plus'
         elif len(primers) == 2:
             if primers[1].id != 'reverse':
-                raise RuntimeError("primers fasta {} should have a second entry 'reverse_rc', not '{}'".format(primers_fasta, primers[1].id))
+                raise RuntimeError("primers fasta {} should have a second entry 'reverse', not '{}'".format(primers_fasta, primers[1].id))
             userfields = 'query+target+qstrand+qlo+qhi'
             strand = 'both'
         else:
