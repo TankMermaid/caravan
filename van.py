@@ -88,6 +88,11 @@ if __name__ == '__main__':
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output tax list')
     p.set_defaults(func=tax.TaxAssigner.assign_b6_with_pickled_tax_dict)
 
+    p = subparser('utax', help='assign taxonomies using utax (and options in utax.json')
+    p.add_argument('fastx')
+    p.add_argument('--output', '-o', default='tax.txt')
+    p.set_defaults(func=usearch.Usearcher().utax)
+
     p = subparser('parse', help='parse a blast6 or uparse mapping file to json membership file')
     p.add_argument('map_fn')
     p.add_argument('json_fn')
