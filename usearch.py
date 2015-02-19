@@ -143,6 +143,5 @@ class Usearcher:
 
         cmd = ['usearch', '-search_oligodb', fastx, '-db', primers_fasta, '-userout', output,
             '-userfields', userfields, '-strand', strand, '-maxdiffs', max_diffs, '-maxhits', 2]
-        print " ".join([str(x) for x in cmd])
 
         self.run(cmd)
