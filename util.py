@@ -1,5 +1,4 @@
 import re, string, sys, time, itertools, os, subprocess
-import usearch_python.primer
 
 def listify(inp):
     '''

@@ -16,7 +16,7 @@ hit)
 
 from Bio import SeqRecord, SeqIO, Seq
 
-class TrimmedSequences():
+class TrimmedRecords():
     '''class for iterating through fastq and trimming'''
 
     def __init__(self, trims, fastq_records, reverse):
@@ -81,7 +81,7 @@ class PrimerRemover():
         # parse the trim file
         trims = self.parse_trim_file(self.trim_records, self.reverse)
 
-        SeqIO.write(TrimmedSequences(trims, self.fastq_records, self.reverse), self.output, 'fastq')
+        SeqIO.write(TrimmedRecords(trims, self.fastq_records, self.reverse), self.output, 'fastq')
 
     @staticmethod
     def parse_trim_file(trim_records, reverse):

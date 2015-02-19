@@ -14,73 +14,62 @@ the first read mapping to that barcode, say
 becomes output like
     @sample=donor1_day5;1
     AACCGGTT
-    +whatever
+    +
     abcdefgh
     
 where the ;1 means it's the first read that mapped to donor1_day5.
 '''
 
-import usearch_python.primer, util
-import sys, argparse, string, itertools, re, csv
+import re, operator, itertools
 from Bio import SeqIO
 
-class BarcodeMapper:
-    def __init__(self, barcode_fn, fastq, max_barcode_diffs, output=sys.stdout, run=True):
-        self.barcode_fn = barcode_fn
-        self.fastq = fastq
-        self.max_barcode_diffs = max_barcode_diffs
-        self.output = output
+class MappedRecords():
+    def __init__(self, barcode_map, fastq_records, max_diffs):
+        self.original_barcode_map = barcode_map
+        self.fastq_records = fastq_records
+        self.max_diffs = max_diffs
 
-        if run:
-            self.run()
+        self.bad_barcodes = {}
+        self.adhoc_barcode_map = dict(barcode_map)
+        self.sample_counts = {}
 
-    def run(self):
-        # parse the barcode mapping file
-        with open(self.barcode_fn, 'r') as f:
-            self.barcode_map = self.barcode_file_to_dictionary(f)
+    def __iter__(self):
+        return self
 
-        # get a set of reads
-        for record in self.renamed_fastq_records(self.fastq, self.barcode_map, self.max_barcode_diffs):
-            SeqIO.write(record, self.output, 'fastq')
+    def next(self):
+        record = self.fastq_records.next()
+        while not self.recognized_record(record):
+            record = self.fastq_records.next()
 
-    @staticmethod
-    def barcode_file_to_dictionary(barcode_lines):
-        '''parse a barcode mapping file into a dictionary {barcode: sample}'''
-        barcode_map = {}
-        for line in barcode_lines:
-            sample, barcode = line.split()
-            barcode_map[barcode] = sample
+        sample = self.adhoc_barcode_map[self.parse_barcode(record)]
+        if sample not in self.sample_counts:
+            self.sample_counts[sample] = 1
+        else:
+            self.sample_counts[sample] += 1
 
-        return barcode_map
+        record.id = "sample={};{}".format(sample, self.sample_counts[sample])
+        record.description = ''
+        return record
 
-    @staticmethod
-    def best_barcode_match(known_barcodes, barcode):
-        '''
-        Find the best match between a known barcode a list of known barcodes
+    def recognized_record(self, record):
+        barcode_read = self.parse_barcode(record)
 
-        Parameters
-        known_barcodes : sequence of iterator of sequences
-            list of known barcodes
-        barcode : string
-            the barcode read to be matched against the known barcodes
+        if barcode_read in self.adhoc_barcode_map:
+            return True
+        elif barcode_read in self.bad_barcodes:
+            return False
+        else:
+            # this is a new barcode. need to compare it against existing.
+            for known_code in self.original_barcode_map:
+                if self.hamming_distance(barcode_read, known_code) <= self.max_diffs:
+                    # this is a good enough match. in our ad hoc list, point this
+                    # barcode to the same sample as the matching known barcode
+                    self.adhoc_barcode_map[barcode_read] = self.original_barcode_map[known_code]
+                    return True
 
-        Returns
-        min_mismatches : int
-            number of mismatches in the best alignment
-        best_known_barcode : string
-            known barcode that aligned best
-        '''
-        
-        # get a list of pairs (n_mismatches, known_barcode)
-        #n_mismatches = lambda known_barcode: util.mismatches(barcode, known_barcode, 1)[1]
-        n_mismatches = lambda known_barcode: usearch_python.primer.MatchPrefix(barcode, known_barcode)
-
-        alignments = [(n_mismatches(known_barcode), known_barcode) for known_barcode in known_barcodes]
-
-        # find the alignment that has the minimum number of mismatches
-        min_mismatches, best_known_barcode = min(alignments, key=lambda x: x[0])
-
-        return min_mismatches, best_known_barcode
+            # this code isn't similar enough to any known code. throw it away.
+            self.bad_barcodes[barcode_read] = 0
+            return False
 
     @staticmethod
     def parse_barcode(record):
@@ -91,134 +80,37 @@ class BarcodeMapper:
         record : SeqRecord
             fastq record
         
-        returns : tuple
-            (barcode read, read direction), where direction is either '1' or '2'
+        returns : string
+            barcode read
         '''
         
         # match, e.g. @any_set_of_chars#ACGT/1 -> ACGT
-        m = re.match(".*#([ACGTN]+)/(\d)$", record.id)
+        m = re.match(".*#([ACGTN]+)/[12]$", record.id)
 
         if m is None:
             raise RuntimeError("fastq id did not match expected format: %s" %(record.id))
 
-        # pull out the read and direction from the match
-        barcode_read = m.group(1)
-        read_direction = m.group(2)
-        
-        if read_direction not in ['1', '2']:
-            raise RuntimeError('read direction not 1 or 2: %s' %(record.id))
-        
-        return (barcode_read, read_direction)
-    
-    @classmethod
-    def renamed_fastq_records(cls, fastq, barcode_map, max_barcode_diffs):
-        '''
-        Rename the read IDs in a fastq file with the corresponding sample name. Get the barcode
-        read right from the ID line, look it up in the barcode map, and pick the best match.
+        return m.group(1)
 
-        Parameters
-        fastq : filename or filehandle
-            input
-        barcode_map : dictionary
-            entries are {barcode: sample_name}
-        max_barcode_diffs : int
-            maximum number of mismatches between a barcode read and known barcode before throwing
-            out that read
-
-        yields : SeqRecord
-            fastq records
-        '''
-
-        # keep track of the computations where we align the barcode read to the known barcodes
-        barcode_read_to_sample = {}
-        sample_counts = {}
-
-        for record in SeqIO.parse(fastq, 'fastq'):
-            # look for the barcode from the read ID line
-            barcode_read, read_direction = cls.parse_barcode(record)
-            
-            if barcode_read in barcode_read_to_sample:
-                sample = barcode_read_to_sample[barcode_read]
-                sample_counts[sample] += 1
-            else:
-                # try aligning to every known barcode
-                n_mismatches, best_known_barcode = cls.best_barcode_match(barcode_map.keys(), barcode_read)
-
-                # if the match was good, assign that barcode read to the sample that the best read
-                # matches
-                if n_mismatches > max_barcode_diffs:
-                    continue
-                else:
-                    # get the name for this sample; record which sample we mapped this barcode
-                    # read to
-                    sample = barcode_map[best_known_barcode]
-                    barcode_read_to_sample[barcode_read] = sample
-                    sample_counts[sample] = 1
-
-            record.id = "sample=%s;%d/%s" %(sample, sample_counts[sample], read_direction)
-            
-            # expunge other parts of title
-            record.description = ''
-            yield record
+    @staticmethod
+    def hamming_distance(x, y):
+        assert len(x) == len(y)
+        return sum(itertools.imap(operator.ne, x, y))
 
 
-class BarcodeCounter(BarcodeMapper):
-    '''
-    For counting the number of each barcode that appear in the first N entries of a fastq.
-    Currently it only looks for exact matches.
-    '''
-
-    def __init__(self, barcode_fn, fastq, max_entries, output=sys.stdout, run=True):
-        self.barcode_fn = barcode_fn
-        self.fastq = fastq
-        self.max_entries = max_entries
+class BarcodeMapper:
+    def __init__(self, barcode_fasta, fastq, max_diffs, output, run=True):
+        self.barcode_fasta = SeqIO.parse(barcode_fasta, 'fasta')
+        self.fastq_records = SeqIO.parse(fastq, 'fastq')
+        self.max_diffs = max_diffs
         self.output = output
 
         if run:
             self.run()
 
     def run(self):
-        with open(self.barcode_fn) as f:
-            self.barcode_map = self.barcode_file_to_dictionary(f)
-    
-        self.counts = self.count_barcodes(self.fastq, self.barcode_map, self.max_entries)
-    
-        self.write_counts_report(self.counts, self.output)
+        # parse the barcode mapping file
+        self.barcode_map = {str(record.seq): record.id for record in self.barcode_fasta}
 
-    @classmethod
-    def count_barcodes(cls, fastq, barcode_map, max_entries):
-        '''count the number of appearances of each barcode in a fastq'''
-    
-        # initialize the count dictionary
-        counts = {sample: 0 for sample in barcode_map.values()}
-        counts['mapped'] = 0
-        counts['total'] = 0
-    
-        for i, record in enumerate(SeqIO.parse(fastq, 'fastq')):
-            if i >= max_entries:
-                break
-            
-            barcode_read, read_direction = cls.parse_barcode(record)
-            if barcode_read in barcode_map:
-                sample = barcode_map[barcode_read]
-                counts[sample] += 1
-                counts['mapped'] += 1
-            
-            counts['total'] += 1
-        
-        return counts
-
-    @staticmethod
-    def write_counts_report(counts, f):
-        '''log the counts in a filehandle f'''
-    
-        # sort the results by abundance
-        sorted_counts = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)
-        
-        percent = lambda n: "%.2f%%" %(float(n) / counts['total'] * 100)
-        
-        w = csv.writer(f, delimiter='\t', quoting=csv.QUOTE_NONE)
-        w.writerow(['sample', '# reads', '% reads'])
-            
-        for sample, n in sorted_counts:
-            w.writerow([sample, str(n), percent(n)])
+        # get a set of reads
+        SeqIO.write(MappedRecords(self.barcode_map, self.fastq_records, self.max_diffs), self.output, 'fastq')

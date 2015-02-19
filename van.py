@@ -47,18 +47,11 @@ if __name__ == '__main__':
     p.set_defaults(func=usearch.Usearcher().filter)
 
     p = subparser('demultiplex', help='assign reads to samples using index reads')
+    p.add_argument('barcode_fasta')
     p.add_argument('fastq', help='input fastq')
-    p.add_argument('barcode_fn', help='barcode file')
-    p.add_argument('--max_barcode_diffs', '-m', type=int, default=1, help='number of mismatches allowed before throwing out a read')
-    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output fastq')
+    p.add_argument('--max_diffs', '-m', type=int, default=1, help='number of barcode mismatches allowed')
+    p.add_argument('--output', '-o', default='mapped.fq', help='output fastq')
     p.set_defaults(func=barcodes.BarcodeMapper)
-
-    p = subparser('check_barcodes')
-    p.add_argument('fastq', help='input fastq')
-    p.add_argument('barcode_fn', help='barcode file')
-    p.add_argument('--max_entries', '-m', type=int, default=1000, help='number of entries to check')
-    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output log')
-    p.set_defaults(func=barcodes.BarcodeCounter)
 
     p = subparser('derep', help='find unique sequences (and write index file)')
     p.add_argument('fasta', help='input fasta')
