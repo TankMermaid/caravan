@@ -53,6 +53,13 @@ if __name__ == '__main__':
     p.add_argument('--output', '-o', default='mapped.fq', help='output fastq')
     p.set_defaults(func=barcodes.BarcodeMapper)
 
+    p = subparser('both_primers', help='find and trim both primers at once')
+    p.add_argument('primers_fasta')
+    p.add_argument('fastx', help='query')
+    p.add_argument('--output', '-o', default='trim.fa', help='output fasta')
+    p.add_argument('--max_diffs', '-m', default=1, type=int, help='max mismatches allowed')
+    p.set_defaults(func=usearch.Usearcher().pcr_search)
+
     p = subparser('derep', help='find unique sequences (and write index file)')
     p.add_argument('fasta', help='input fasta')
     p.add_argument('--min_counts', '-m', type=int, default=0, help='number of times a sequence must appear to be kept')

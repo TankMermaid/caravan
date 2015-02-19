@@ -145,3 +145,14 @@ class Usearcher:
             '-userfields', userfields, '-strand', strand, '-maxdiffs', max_diffs, '-maxhits', 2]
 
         self.run(cmd)
+
+    def pcr_search(self, primers_fasta, fastx, output, max_diffs, strip=True):
+        '''search for a pair of oligos'''
+
+        cmd = ['usearch', '-search_pcr', fastx, '-db', primers_fasta, '-strand', 'both',
+            '-maxdiffs', max_diffs, '-ampout', output]
+
+        if strip:
+            cmd.append('-pcr_strip_primers')
+
+        self.run(cmd)
