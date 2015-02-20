@@ -74,7 +74,7 @@ class Tabler:
     @classmethod
     def seq_table(cls, provenances, output, samples=None, rename=False):
         # get the index
-        with open(index) as f:
+        with open(provenances) as f:
             provenances_dict = json.load(f)
 
         # make up membership as self => self

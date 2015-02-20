@@ -68,8 +68,8 @@ if __name__ == '__main__':
     p.set_defaults(func=derep.Dereplicator)
 
     p = subparser('denovo', help='cluster de novo with usearch')
-    p.add_argument('fasta', help='input fasta')
     p.add_argument('radius', type=float, help='0.0-100.0, recommended at most 3.0 = 97%% identity')
+    p.add_argument('fasta', help='input fasta')
     p.add_argument('--output', '-o', default='out.fasta', help='representative sequences fasta')
     p.add_argument('--index', '-i', default=None, help='uparse file mapping seqs to otus?')
     p.add_argument('--rename', '-r', default='otu', help='rename otus using this prefix')
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output tax list')
     p.set_defaults(func=tax.TaxAssigner.assign_b6_with_pickled_tax_dict)
 
-    p = subparser('utax', help='assign taxonomies using utax (and options in utax.json')
+    p = subparser('utax', help='assign taxonomies using utax (and options in utax.json)')
     p.add_argument('fastx')
     p.add_argument('--output', '-o', default='tax.txt')
     p.set_defaults(func=usearch.Usearcher().utax)
