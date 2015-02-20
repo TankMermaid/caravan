@@ -11,13 +11,19 @@ from operator import itemgetter
 
 class Tabler:
     @staticmethod
-    def table(membership, provenances, output, samples=None, rename=False):
+    def table(membership, provenances, output, samples=None, rename=False, ignore_unmapped_otus=True):
         # populate the tables
         table = {}  # {sample => {otu => counts}}
         otu_abunds = {} # {otu => counts across samples}
 
         for seq in provenances:
-            otu = membership[seq]
+            if ignore_unmapped_otus:
+                if seq not in membership:
+                    continue
+
+                otu = membership[seq]
+            else:
+                raise RuntimeError("not ignore umapped OTUs not implemented")
 
             if otu not in otu_abunds:
                 otu_abunds[otu] = 0
