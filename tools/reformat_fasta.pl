@@ -20,5 +20,6 @@ while (<>) {
 		$seq .= $_;
 	}
 }
+say $seq;
 
 __END__
