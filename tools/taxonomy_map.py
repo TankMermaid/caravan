@@ -5,7 +5,7 @@ import argparse, json, re
 levels = ['k', 'p', 'c', 'o', 'f', 'g', 's']
 
 def truncate_taxonomy(tax, level):
-    # remove the numbers
+    # remove the numbers, so Bacteria(100) becomes Bacteria etc.
     tax = re.sub('\([\d\.]+\)', '', tax)
 
     # remove any silly quotations
@@ -19,7 +19,9 @@ def truncate_taxonomy(tax, level):
 def tax_map(entries, level):
     tmap = {}
     for entry in entries:
-        sid, tax, strand = entry.split()
+        fields = entry.split()
+        sid = fields[0]
+        tax = fields[1]
         sid = re.sub(';.*$', '', sid)
         trim_tax = truncate_taxonomy(tax, level)
         tmap[sid] = trim_tax
