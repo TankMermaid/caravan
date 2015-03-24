@@ -6,12 +6,12 @@ unit tests for ???
 
 import unittest
 from caravan.test import fake_fh
-#from caravan import ???
+from caravan import barcodes
 
-class TestFunctionName(unittest.TestCase):
+class TestParseBarcode(unittest.TestCase):
     def test_correct(self):
         '''make sure the function provides the correct output'''
-        pass
+        self.assertEqual(barcodes.MappedRecords.parse_barcode('@any_set_of_chars#ACGT/1'), 'ACGT')
     
     def test_raise(self):
         '''make sure the function raises an error when appropriate'''
