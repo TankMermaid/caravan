@@ -41,7 +41,7 @@ class MappedRecords():
         while not self.recognized_record(record):
             record = self.fastq_records.next()
 
-        sample = self.adhoc_barcode_map[self.parse_barcode(record)]
+        sample = self.adhoc_barcode_map[self.parse_barcode(record.id)]
         if sample not in self.sample_counts:
             self.sample_counts[sample] = 1
         else:
@@ -52,7 +52,7 @@ class MappedRecords():
         return record
 
     def recognized_record(self, record):
-        barcode_read = self.parse_barcode(record)
+        barcode_read = self.parse_barcode(record.id)
 
         if barcode_read in self.adhoc_barcode_map:
             return True
@@ -72,23 +72,23 @@ class MappedRecords():
             return False
 
     @staticmethod
-    def parse_barcode(record):
+    def parse_barcode(record_id):
         '''
         Extract the barcode read and direction from a BioPython SeqRecord
         
         Parameters
-        record : SeqRecord
-            fastq record
+        record_id : str
+            fastq SeqRecord id
         
         returns : string
             barcode read
         '''
         
         # match, e.g. @any_set_of_chars#ACGT/1 -> ACGT
-        m = re.match(".*#([ACGTN]+)/[12]$", record.id)
+        m = re.match(".*#([ACGTN]+)/[12]$", record_id)
 
         if m is None:
-            raise RuntimeError("fastq id did not match expected format: %s" %(record.id))
+            raise RuntimeError("fastq id did not match expected format: %s" %(record_id))
 
         return m.group(1)
 
