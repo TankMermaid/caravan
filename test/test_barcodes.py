@@ -4,8 +4,27 @@
 unit tests for barcodes.py
 '''
 
-from caravan import barcodes
 import pytest
+from caravan import barcodes
+from Bio import SeqIO
+
+@pytest.fixture
+def mapper(tmpdir):
+    barcode_map = {'ACGT': 'sample1'}
+    fastq = tmpdir.join("for.fq")
+    fastq.write('@OURSEQ:lolapalooza1234#ACGT/1\nAACCGGTT\n+\naaaaaaaa\n')
+    fastq_fh = fastq.open()
+    fastq_records = SeqIO.parse(fastq_fh, 'fastq')
+    max_diffs = 0
+    mr = barcodes.MappedRecords(barcode_map, fastq_records, max_diffs)
+    return mr
+
+
+class TestMapper:
+    def test_correct(self, mapper):
+        record = mapper.next()
+        assert record.id == 'sample=sample1;1'
+
 
 class TestParseBarcode:
     def test_correct(self):
@@ -18,6 +37,7 @@ class TestParseBarcode:
     def test_fail_with_bad_directionality(self):
         with pytest.raises(RuntimeError):
             barcodes.MappedRecords.parse_barcode('@foo#ACGTN/3')
+
 
 class TestHammingDistance:
     def test_correct_zero(self):
