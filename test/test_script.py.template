@@ -4,19 +4,9 @@
 unit tests for ???
 '''
 
-import unittest
-from caravan.test import fake_fh
 #from caravan import ???
+import pytest
 
-class TestFunctionName(unittest.TestCase):
-    def test_correct(self):
-        '''make sure the function provides the correct output'''
+class TestFunction:
+    def test_(self):
         pass
-    
-    def test_raise(self):
-        '''make sure the function raises an error when appropriate'''
-        pass
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)
