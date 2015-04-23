@@ -12,22 +12,25 @@ if (grep($_ eq "-h" || $_ eq "--help", @ARGV)) {
 my $length = scalar shift @ARGV;
 die "need positive length" unless $length > 0;
 
-my $line = <>;
-chomp $line;
-die "not a fasta" unless (substr $line, 0, 1) eq ">";
-say $line;
-
+my $name = "";
 my $seq = "";
 while (<>) {
 	chomp;
 	if (/^>/) {
-		say (substr $seq, 0, $length);
+		output_entry($name, $seq) unless $. == 1;
+		$name = $_;
 		$seq = "";
-		say;
 	} else {
 		$seq .= $_;
 	}
 }
-say (substr $seq, 0, $length);
+output_entry($name, $seq);
+
+sub output_entry {
+	if ((length $seq) > $length) {
+		say $name;
+		say (substr $seq, 0, $length);
+	}
+}
 
 __END__
