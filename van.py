@@ -119,6 +119,16 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     opts = vars(args)
+
+    # remove the "func" option from the parser results
     func = opts.pop('func')
+
+    # replace any filenames "-" with stdin
+    if "-" in opts.values():
+        keys = [k for k in opts if opts[k] == "-"]
+        if len(keys) > 1:
+            raise RuntimeError("can only accept one '-' argument")
+        else:
+            opts[keys[0]] = sys.stdin
 
     func(**opts)
