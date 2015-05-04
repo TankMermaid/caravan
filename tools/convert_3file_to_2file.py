@@ -3,6 +3,9 @@
 import argparse, sys, os, itertools, gzip
 from Bio import SeqIO
 
+def shared_id(rid):
+    return rid.split()[0]
+
 def new_id(location, barcode, direction):
     '''(location, barcode, direction) -> location#barcode/direction'''
     return "%s#%s/%s" %(location, barcode, direction)
@@ -33,7 +36,7 @@ if __name__ == '__main__':
         
         for fr, rr, ir in itertools.izip(fi, ri, ii):
             # check that the reads match
-            if not (fr.id == rr.id == ir.id):
+            if not (shared_id(fr.id) == shared_id(rr.id) == shared_id(ir.id)):
                 raise RuntimeError("ids in corresponding entries did not match: %s %s %s" %(fr.id, rr.id, ir.id))
             
             # the barcode is the sequence from the index read
