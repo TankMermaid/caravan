@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 
-'''
-Convert the three-file raw Illumina data (forward, reverse, and index reads) into the
-two-file format used by SmileTrain.
-'''
-
-import argparse, sys, os, itertools
-sys.path.append(os.path.normpath(os.path.abspath(__file__) + '/../..'))
+import argparse, sys, os, itertools, gzip
 from Bio import SeqIO
 
 def new_id(location, barcode, direction):
@@ -21,13 +15,21 @@ if __name__ == '__main__':
     parser.add_argument('index', help='input index reads fastq')
     parser.add_argument('forward_out', help='output forward reads fastq')
     parser.add_argument('reverse_out', help='output reverse reads fastq')
-    
+    parser.add_argument('--gzip', '-g', action='store_true', help='input files are gzipped?')
     args = parser.parse_args()
+
+    # open up the filehandles, zipped or not
+    if args.gzip:
+        opener = lambda x: gzip.open(x)
+    else:
+        opener = lambda x: open(x)
+
+    fih, rih, iih = [opener(fn) for fn in [args.forward_in, args.reverse_in, args.index]]
     
     with open(args.forward_out, 'w') as fo, open(args.reverse_out, 'w') as ro:
-        fi = SeqIO.parse(args.forward_in, 'fastq')
-        ri = SeqIO.parse(args.reverse_in, 'fastq')
-        ii = SeqIO.parse(args.index, 'fastq')
+        fi = SeqIO.parse(fih, 'fastq')
+        ri = SeqIO.parse(rih, 'fastq')
+        ii = SeqIO.parse(iih, 'fastq')
         
         for fr, rr, ir in itertools.izip(fi, ri, ii):
             # check that the reads match
