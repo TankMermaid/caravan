@@ -24,9 +24,9 @@ import re, operator, itertools
 from Bio import SeqIO
 
 class MappedRecords():
-    def __init__(self, barcode_map, fastq_records, max_diffs):
+    def __init__(self, barcode_map, fastx_records, max_diffs):
         self.original_barcode_map = barcode_map
-        self.fastq_records = fastq_records
+        self.fastx_records = fastx_records
         self.max_diffs = max_diffs
 
         self.bad_barcodes = {}
@@ -37,9 +37,9 @@ class MappedRecords():
         return self
 
     def next(self):
-        record = self.fastq_records.next()
+        record = self.fastx_records.next()
         while not self.recognized_record(record):
-            record = self.fastq_records.next()
+            record = self.fastx_records.next()
 
         sample = self.adhoc_barcode_map[self.parse_barcode(record.id)]
         if sample not in self.sample_counts:
@@ -99,11 +99,14 @@ class MappedRecords():
 
 
 class BarcodeMapper:
-    def __init__(self, barcode_fasta, fastq, max_diffs, output, run=True):
-        self.barcode_fasta = SeqIO.parse(barcode_fasta, 'fasta')
-        self.fastq_records = SeqIO.parse(fastq, 'fastq')
+    def __init__(self, barcode_fasta, fastx, max_diffs, output, filetype, run=True):
+        '''filetype is 'fasta' or 'fastq' '''
+
+        self.barcode_fasta = SeqIO.parse(barcode_fasta, filetype)
+        self.fastx_records = SeqIO.parse(fastx, filetype)
         self.max_diffs = max_diffs
         self.output = output
+        self.filetype = filetype
 
         if run:
             self.run()
@@ -113,4 +116,4 @@ class BarcodeMapper:
         self.barcode_map = {str(record.seq): record.id for record in self.barcode_fasta}
 
         # get a set of reads
-        SeqIO.write(MappedRecords(self.barcode_map, self.fastq_records, self.max_diffs), self.output, 'fastq')
+        SeqIO.write(MappedRecords(self.barcode_map, self.fastx_records, self.max_diffs), self.output, self.filetype)

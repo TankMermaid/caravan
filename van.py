@@ -59,11 +59,20 @@ def parse_args(args=None):
     p.add_argument('--output', '-o', default='out.fa', help='output filtered fasta')
     p.set_defaults(func=usearch.Usearcher().filter)
 
-    p = subparser('demultiplex', help='assign reads to samples using index reads')
+    p = subparser('demultiplex_fastq', help='assign reads to samples using index reads')
     p.add_argument('barcode_fasta')
-    p.add_argument('fastq', help='input fastq')
+    p.add_argument('fastx', help='input fastq')
     p.add_argument('--max_diffs', '-m', type=int, default=1, help='number of barcode mismatches allowed')
     p.add_argument('--output', '-o', default='mapped.fq', help='output fastq')
+    p.set_defaults(filetype='fastq')
+    p.set_defaults(func=barcodes.BarcodeMapper)
+
+    p = subparser('demultiplex_fasta', help='assign reads to samples using index reads')
+    p.add_argument('barcode_fasta')
+    p.add_argument('fastx', help='input fasta')
+    p.add_argument('--max_diffs', '-m', type=int, default=1, help='number of barcode mismatches allowed')
+    p.add_argument('--output', '-o', default='mapped.fq', help='output fastq')
+    p.set_defaults(filetype='fasta')
     p.set_defaults(func=barcodes.BarcodeMapper)
 
     p = subparser('both_primers', help='find and trim both primers at once')
