@@ -5,7 +5,7 @@ command-line interface
 '''
 
 import argparse, sys
-import check_intersect, primers, barcodes, derep, usearch, tax, table, parse, submit
+import split, check_intersect, primers, barcodes, derep, usearch, tax, table, parse, submit
 
 def parse_args(args=None):
     '''
@@ -26,6 +26,11 @@ def parse_args(args=None):
     p.add_argument('forward', help='forward fastq')
     p.add_argument('reverse', help='reverse fastq')
     p.set_defaults(func=check_intersect.IntersectChecker)
+
+    p = subparser('split', help='split fastx into chunks based on size')
+    p.add_argument('fastx', help='file to be split')
+    p.add_argument('--size', '-s', help='size for each output chunk', default='1.0Gb')
+    p.set_defaults(func=split.FastxSplitter)
 
     p = subparser('merge', help='merge forward and reverse reads')
     p.add_argument('forward', help='forward fastq')

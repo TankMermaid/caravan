@@ -10,23 +10,47 @@ from Bio import SeqIO
 import util
 
 class FastxSplitter():
-    def __init__(self, input_filename, size, fastx, mb=False, max_chunks=100):
-        self.input_filename = input_filename
-        self.size = self.size_parser(size)
+    def __init__(self, fastx, size, filetype=None, mb=False, max_chunks=100):
         self.fastx = fastx
+        self.size = self.size_parser(size)
 
-        # validate fastx
-        if self.fastx not in ['fasta', 'fastq']:
-            raise RuntimeError('filtype %s not one of fasta or fastq' % self.fastx)
+        # guess filetype if not specified
+        if filetype is None:
+            self.filetype = self.infer_filetype(fastx)
+        else:
+            self.filetype = self.infer_filetype_from_alias(filetype)
 
         # how many output files will be needed?
         # size of file divided by chunk size, rounded up
-        n_chunks = int(ceil(float(os.path.getsize(self.input_filename)) / self.size))
+        n_chunks = int(ceil(float(os.path.getsize(self.fastx)) / self.size))
 
-        self.fns = self.output_filenames(self.input_filename, n_chunks)
+        self.fns = self.output_filenames(self.fastx, n_chunks)
         util.check_for_collisions(self.fns)
         self.fhs = [open(fn, 'w') for fn in self.fns]
-        self.split_entries(self.input_filename, self.size, self.fhs, self.fastx)
+        self.split_entries(self.fastx, self.size, self.fhs, self.filetype)
+
+    @staticmethod
+    def infer_filetype_from_alias(x):
+        '''recognize abbreviations for fasta and fastq'''
+        if x in ['fasta', 'fa', 'fsa']:
+            return 'fasta'
+        elif x in ['fastq', 'fq']:
+            return 'fastq'
+        else:
+            raise RuntimeError('alias {} not recognized as fasta or fastq'.format(x))
+
+    @classmethod
+    def infer_filetype(cls, fastx):
+        '''infer fasta/q from the filename and test'''
+        # first, make a guess based on the name
+        # get the extension and scrub the dot
+        extension = os.path.splitext(fastx)[-1].lstrip('.')
+        filetype = cls.infer_filetype_from_alias(extension)
+
+        # try parsing one entry
+        SeqIO.parse(fastx, filetype).next()
+
+        return filetype
 
     @staticmethod
     def size_parser(size_string):
