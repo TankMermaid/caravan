@@ -7,7 +7,15 @@ command-line interface
 import argparse, sys
 import check_intersect, primers, barcodes, derep, usearch, tax, table, parse, submit
 
-if __name__ == '__main__':
+def parse_args(args=None):
+    '''
+    parse command-line arguments
+
+    returns : tuple (func, opts)
+        func : function, to be called
+        opts : dict, the kwargs for the function
+    '''
+
     parser = argparse.ArgumentParser(description="caravan: a 16S pipeline", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     subparsers = parser.add_subparsers(title="commands")
 
@@ -117,7 +125,7 @@ if __name__ == '__main__':
     p.add_argument('jobs', help='json jobs file')
     p.set_defaults(func=submit.Submitter.submit_jobs)
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
     opts = vars(args)
 
     # remove the "func" option from the parser results
@@ -131,4 +139,8 @@ if __name__ == '__main__':
         else:
             opts[keys[0]] = sys.stdin
 
+    return func, opts
+
+if __name__ == '__main__':
+    func, opts = parse_args()
     func(**opts)
