@@ -14,4 +14,4 @@ caravan is developed against Python 2.7.3 and Perl 5.10.1.
 Documents are in the github wiki.
 
 ## Tests
-Unit tests are in the `test` folder. You can run the tests from the top directory by running `python -m unittest discover`.
+Unit tests are in the `test` folder. You can run the tests from the top directory by running `py.test`.

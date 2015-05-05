@@ -7,6 +7,9 @@ unit tests for ???
 #from caravan import ???
 import pytest
 
-class TestFunction:
-    def test_(self):
-        pass
+class TestFunction: # replace 'Function' with your function name
+    def test_(self): # add the kind of test, e.g., 'test_correct' or 'test_raise'
+        assert True # make an assert statement for truth
+
+        with pytest.raises(RuntimeError): # assert an error raise
+            raise RuntimeError
