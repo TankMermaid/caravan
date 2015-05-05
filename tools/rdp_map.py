@@ -50,8 +50,13 @@ if __name__ == '__main__':
     p.add_argument('allrank', type=argparse.FileType('r'))
     p.add_argument('--min_conf', '-m', type=int, default=50)
     p.add_argument('--output', '-o', type=argparse.FileType('w'), default=sys.stdout)
+    p.add_argument('--header', action='store_true', help='ignore first 7 lines?')
 
     args = p.parse_args()
+
+    if args.header:
+        for i in range(7):
+            args.allrank.readline()
 
     tmap = tax_map(args.allrank, args.level, args.min_conf)
 
