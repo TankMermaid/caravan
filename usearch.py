@@ -6,16 +6,20 @@ import argparse, os, sys, subprocess, StringIO, json, os.path
 from Bio import SeqRecord, SeqIO, Seq
 
 class Usearcher:
-    def __init__(self, dry=False):
-        self.dry = dry
+    def __init__(self, debug=False):
+        '''debug mode doesn't run the command'''
+        self.debug = debug
 
     def run(self, cmd):
+        '''
+        other methods construct commands. this method calls the command
+        (unless debug is on) and returns the command arguments
+        '''
+
         cmd = [str(x) for x in cmd]
         cmd_string = " ".join(cmd)
 
-        if self.dry:
-            print cmd_string
-        else:
+        if not self.debug:
             # run command and grab stdout
             try:
                 self.out = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
@@ -34,13 +38,15 @@ class Usearcher:
                 
                 raise RuntimeError("when running with command '%s', usearch failed with message: '%s'" %(cmd_string, desc_line))
 
+        return cmd
+
     def merge(self, forward, reverse, output, truncqual=None):
         cmd = ['usearch', '-fastq_mergepairs', forward, '-reverse', reverse, '-fastqout', output]
 
         if truncqual is not None:
             cmd += ['-fastq_truncqual', truncqual]
 
-        self.run(cmd)
+        return self.run(cmd)
 
     def filter(self, fastq, output, truncqual=None, maxee=None):
         cmd = ['usearch', '-fastq_filter', fastq, '-fastaout', output]
