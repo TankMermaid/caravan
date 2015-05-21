@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     p.add_argument('level', choices=levels)
     p.add_argument('allrank', type=argparse.FileType('r'))
-    p.add_argument('--min_conf', '-m', type=int, default=50)
+    p.add_argument('--min_conf', '-m', type=int, default=50, help='minimum confidence 0-100')
     p.add_argument('--output', '-o', type=argparse.FileType('w'), default=sys.stdout)
     p.add_argument('--header', action='store_true', help='ignore first 7 lines?')
 

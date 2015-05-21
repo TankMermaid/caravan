@@ -71,7 +71,7 @@ def parse_args(args=None):
     p.add_argument('barcode_fasta')
     p.add_argument('fastx', help='input fasta')
     p.add_argument('--max_diffs', '-m', type=int, default=1, help='number of barcode mismatches allowed')
-    p.add_argument('--output', '-o', default='mapped.fq', help='output fastq')
+    p.add_argument('--output', '-o', default='mapped.fa', help='output fasta')
     p.set_defaults(filetype='fasta')
     p.set_defaults(func=barcodes.BarcodeMapper)
 
