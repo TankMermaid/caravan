@@ -2,7 +2,10 @@
 use a blast6 alignment file to get taxonomies
 '''
 
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 class TaxAssigner:
     @staticmethod

@@ -58,7 +58,7 @@ class Tabler:
                 samples = [line.split()[0] for line in open(samples)]
             
         # sort otu names by decreasing abundance
-        sorted_otus_abunds = sorted(otu_abunds.iteritems(), key=itemgetter(1), reverse=True)
+        sorted_otus_abunds = sorted(otu_abunds.items(), key=itemgetter(1), reverse=True)
 
         # first, output the header/sample line
         output.write("\t".join(['OTU_ID'] + samples) + "\n")

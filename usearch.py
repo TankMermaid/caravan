@@ -2,7 +2,7 @@
 usearch wrapper. implements a nice parser that has more helpful help messages.
 '''
 
-import argparse, os, sys, subprocess, StringIO, json, os.path
+import argparse, os, sys, subprocess, json, os.path
 from Bio import SeqRecord, SeqIO, Seq
 
 class Usearcher:
