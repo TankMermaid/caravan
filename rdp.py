@@ -4,16 +4,80 @@ parse fixrank files output by classifier.jar
 
 import csv, re, itertools
 
+class FixrankRank:
+    def __init__(self, name, taxon, confidence):
+        self.name = name
+        self.taxon = re.sub('"', '', taxon)
+        self.confidence = float(confidence)
+
+    def __eq__(self, other):
+        return all([self.name == other.name, self.taxon == other.taxon, self.confidence == other.confidence])
+
+    def __repr__(self):
+        return 'FixrankRank("{}", "{}", {})'.format(self.name, self.taxon, self.confidence)
+
+
 class FixrankLineage:
+    standard_rank_names = ['domain', 'phylum', 'class', 'order', 'family', 'genus']
+    #abbr_standard_ranks = {x: y for x, y in zip(['k', 'p', 'c', 'o', 'f', 'g'], levels)}
+
+    def __init__(self, ranks, standardize=False, min_confidence=None):
+        self.ranks = ranks
+
+        # try to recast lists as ranks
+        for i in range(len(self.ranks)):
+            if type(self.ranks[i]) is list:
+                self.ranks[i] = FixrankRank(*self.ranks[i])
+
+        if standardize:
+            self.standardize()
+
+        if min_confidence is not None:
+            self.trim_at_confidence(min_confidence)
+
+    def __eq__(self, other):
+        return all([x == y for x, y in zip(self.ranks, other.ranks)])
+
+    def ranks_at_confidence(self, min_confidence):
+        return list(itertools.takewhile(lambda rank: rank.confidence >= min_confidence, self.ranks))
+
+    def trim_at_confidence(self, min_confidence):
+        self.min_confidence = min_confidence
+        self.ranks = self.ranks_at_confidence(min_confidence)
+
+    def standardized_ranks(self):
+        # make a dictionary like 'phylum' => FrRank['phylum', 'Chloroflexi', 0.8]
+        mix_ranks = {rank.name: rank for rank in self.ranks}
+        out = []
+
+        for name in self.standard_rank_names:
+            if name in mix_ranks:
+                out.append(mix_ranks[name])
+            else:
+                out.append(FixrankRank(name, 'no_entry_{}'.format(name), 0.0))
+
+        return out
+
+    def standardize(self):
+        self.ranks = self.standardized_ranks()
+
+    def ranks_to_rank(self, name):
+        '''return ranks down to a certain level'''
+        out = []
+
+        for rank in self.ranks:
+            out.append(rank)
+
+            if rank.name == name:
+                break
+
+        return out
+
+
+class FixrankParser:
     @staticmethod
     def parse_triplet(triplet):
-        '''replace quotes, cast as float, and reorder'''
-        assert(len(triplet) == 3)
-        taxon = re.gsub('"', '', triplet[0])
-        level = triplet[1]
-        confidence = float(triplet[2])
-
-        return level, taxon, confidence
+        return FixrankRank(triplet[1], triplet[0], triplet[2])
 
     @staticmethod
     def parse_sid_entry(entry):
@@ -31,20 +95,9 @@ class FixrankLineage:
         # the rest of the entries should divide into triplets
         assert (len(entries) - 2) % 3 == 0
         entry_triplets = zip(*[iter(entries[2:])] * 3)
-        triplets = [cls.parse_triplet(t) for t in entry_triplets]
+        ranks = [cls.parse_triplet(t) for t in entry_triplets]
 
         # the first entry should be root, whatever that is
-        assert triplets[0] == ['rootrank', 'Root', 1.0]
+        assert ranks[0] == FixrankRank('rootrank', 'Root', 1.0)
 
-        return sid_entry, triplets[1:]
-
-    def __init__(self, entries):
-        self.sid, self.triples = self.parse_entries(entries)
-
-    def trim_to_confidence(self, confidence):
-        new_triplets = list(itertools.takewhile(lambda triplet: triplet[2] > confidence, self.triplets))
-        self.triplets = new_triplets
-
-class FixrankParser:
-    pass
-    
+        return sid_entry, FixrankLineage(ranks[1:])
