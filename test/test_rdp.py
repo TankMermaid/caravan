@@ -19,6 +19,22 @@ class TestRankEqual:
         rank2 = rdp.FixrankRank('domain', 'Bacteria', '0.8')
         assert rank1 == rank2
 
+class TestLineageEqual:
+    def test_correct(self):
+        lin1 = rdp.FixrankLineage([['domain', 'Bacteria', 1.0], ['phylum', 'P', 1.0]])
+        lin2 = rdp.FixrankLineage([['domain', 'Bacteria', 1.0], ['phylum', 'P', 1.0]])
+        assert lin1 == lin2
+
+    def test_different_info(self):
+        lin1 = rdp.FixrankLineage([['domain', 'Bacteria', 1.0], ['phylum', 'P', 1.0]])
+        lin2 = rdp.FixrankLineage([['domain', 'Bacteria', 1.0], ['phylum', 'something_else', 1.0]])
+        assert lin1 != lin2
+
+    def test_different_lengths(self):
+        lin1 = rdp.FixrankLineage([['domain', 'Bacteria', 1.0], ['phylum', 'P', 1.0]])
+        lin2 = rdp.FixrankLineage([['domain', 'Bacteria', 1.0]])
+        assert lin1 != lin2
+
 class TestParseTriplet:
     def test_correct(self):
         rank = rdp.FixrankParser.parse_triplet(['"Bacteroidetes"', 'phylum', '1.0'])

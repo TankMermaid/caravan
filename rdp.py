@@ -36,16 +36,20 @@ class FixrankLineage:
             self.trim_at_confidence(min_confidence)
 
     def __eq__(self, other):
-        return all([x == y for x, y in zip(self.ranks, other.ranks)])
+        '''lineages are equal if all their ranks are'''
+        return len(self.ranks) == len(other.ranks) and all([x == y for x, y in zip(self.ranks, other.ranks)])
 
     def ranks_at_confidence(self, min_confidence):
+        '''return my entries trimmed to a confidence'''
         return list(itertools.takewhile(lambda rank: rank.confidence >= min_confidence, self.ranks))
 
     def trim_at_confidence(self, min_confidence):
+        '''trim my entries to a confidence'''
         self.min_confidence = min_confidence
         self.ranks = self.ranks_at_confidence(min_confidence)
 
     def standardized_ranks(self):
+        '''return ranks in standard level order, filling empties'''
         # make a dictionary like 'phylum' => FrRank['phylum', 'Chloroflexi', 0.8]
         mix_ranks = {rank.name: rank for rank in self.ranks}
         out = []
@@ -59,6 +63,7 @@ class FixrankLineage:
         return out
 
     def standardize(self):
+        '''make my ranks standard ranks'''
         self.ranks = self.standardized_ranks()
 
     def ranks_to_rank(self, name):
@@ -77,10 +82,12 @@ class FixrankLineage:
 class FixrankParser:
     @staticmethod
     def parse_triplet(triplet):
+        '''parse a 3-mer list into a Rank object'''
         return FixrankRank(triplet[1], triplet[0], triplet[2])
 
     @staticmethod
     def parse_sid_entry(entry):
+        '''remove annotations from a field'''
         return entry.split(';')[0]
 
     @classmethod
@@ -104,5 +111,6 @@ class FixrankParser:
 
     @classmethod
     def parse_line(cls, line, delimiter="\t"):
+        '''parse a line into seq id and lineage'''
         entries = line.rstrip().split(delimiter)
         return cls.parse_entries(entries)
