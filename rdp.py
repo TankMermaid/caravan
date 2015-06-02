@@ -124,6 +124,12 @@ class FixrankParser:
         return cls.parse_entries(entries)
 
     @classmethod
-    def parse_lines(cls, lines):
+    def parse_lines(cls, lines, min_confidence):
+        mapping = {}
         for line in lines:
-            pass
+            sid, lineage = cls.parse_line(line)
+            lineage.standardize()
+            lineage.trim_at_confidence(min_confidence)
+            mapping[sid] = str(lineage)
+
+        return mapping

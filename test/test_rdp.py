@@ -92,3 +92,15 @@ class TestParseLine:
         sid, lin = rdp.FixrankParser.parse_line(line)
         assert sid == 'seq494517'
         assert lin == rdp.FixrankLineage([['domain', 'Bacteria', 1.0], ['phylum', 'Proteobacteria', 1.0], ['class', 'Alphaproteobacteria', 0.89], ['order', 'Caulobacterales', 0.42], ['family', 'Caulobacteraceae', 0.41], ['genus', 'Brevundimonas', 0.38]])
+
+class WithLines:
+    content = '''seq1;size=272905;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t0.0\tFlavobacteriia\tclass\t1.0\t"Flavobacteriales"\torder\t1.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0
+seq2;size=229776;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t1.0\tFlavobacteriia\tclass\t0.0\t"Flavobacteriales"\torder\t1.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0
+seq3;size=212890;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t1.0\tFlavobacteriia\tclass\t1.0\t"Flavobacteriales"\torder\t0.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0'''
+    lines = content.split("\n")
+
+class TestParseLines(WithLines):
+    def test_correct(self):
+        expected = {'seq1': 'Bacteria', 'seq2': 'Bacteria;Bacteroidetes', 'seq3': 'Bacteria;Bacteroidetes;Flavobacteriia'}
+        mapping = rdp.FixrankParser.parse_lines(self.lines, 0.5)
+        assert expected == mapping
