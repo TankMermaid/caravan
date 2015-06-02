@@ -155,3 +155,11 @@ class TestParseFileAllRanks(WithTmpdir):
             p_map = json.load(f)
 
         assert p_map['seq1'] == 'Bacteria;Bacteroidetes'
+
+    def test_correct_with_confidence(self, tmpdir):
+        rdp.FixrankParser.parse_file_all_ranks(self.fixrank, self.output_base, self.repl, 0.5)
+
+        with open(os.path.join(self.output_dir, 'rdp_p.json')) as f:
+            p_map = json.load(f)
+
+        assert p_map['seq1'] == 'Bacteria'
