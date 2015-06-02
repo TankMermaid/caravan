@@ -36,10 +36,10 @@ class MappedRecords():
     def __iter__(self):
         return self
 
-    def next(self):
-        record = self.fastx_records.next()
+    def __next__(self):
+        record = next(self.fastx_records)
         while not self.recognized_record(record):
-            record = self.fastx_records.next()
+            record = next(self.fastx_records)
 
         sample = self.adhoc_barcode_map[self.parse_barcode(record.id)]
         if sample not in self.sample_counts:
@@ -95,7 +95,7 @@ class MappedRecords():
     @staticmethod
     def hamming_distance(x, y):
         assert len(x) == len(y)
-        return sum(itertools.imap(operator.ne, x, y))
+        return sum(map(operator.ne, x, y))
 
 
 class BarcodeMapper:
