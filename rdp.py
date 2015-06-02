@@ -101,3 +101,8 @@ class FixrankParser:
         assert ranks[0] == FixrankRank('rootrank', 'Root', 1.0)
 
         return sid_entry, FixrankLineage(ranks[1:])
+
+    @classmethod
+    def parse_line(cls, line, delimiter="\t"):
+        entries = line.rstrip().split(delimiter)
+        return cls.parse_entries(entries)

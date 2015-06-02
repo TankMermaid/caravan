@@ -49,5 +49,12 @@ class TestRanksAtConfidence(WithEntries):
 
 class TestRanksToRank:
     def test_correct(self):
-        sid, ranks = rdp.FixrankParser.parse_entries(['seq1', '', 'Root', 'rootrank', '1.0', 'K', 'domain', '1.0', 'P', 'phylum', '0.5', 'C', 'class', '1.0'])
-        assert ranks.ranks_to_rank('phylum') == [rdp.FixrankRank('domain', 'K', 1.0), rdp.FixrankRank('phylum', 'P', 0.5)]
+        sid, lin = rdp.FixrankParser.parse_entries(['seq1', '', 'Root', 'rootrank', '1.0', 'K', 'domain', '1.0', 'P', 'phylum', '0.5', 'C', 'class', '1.0'])
+        assert lin.ranks_to_rank('phylum') == [rdp.FixrankRank('domain', 'K', 1.0), rdp.FixrankRank('phylum', 'P', 0.5)]
+
+class TestParseLine:
+    def test_correct(self):
+        line = 'seq494517;size=2;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Proteobacteria"\tphylum\t1.0\tAlphaproteobacteria\tclass\t0.89\tCaulobacterales\torder\t0.42\tCaulobacteraceae\tfamily\t0.41\tBrevundimonas\tgenus\t0.38\n'
+        sid, lin = rdp.FixrankParser.parse_line(line)
+        assert sid == 'seq494517'
+        assert lin == rdp.FixrankLineage([['domain', 'Bacteria', 1.0], ['phylum', 'Proteobacteria', 1.0], ['class', 'Alphaproteobacteria', 0.89], ['order', 'Caulobacterales', 0.42], ['family', 'Caulobacteraceae', 0.41], ['genus', 'Brevundimonas', 0.38]])
