@@ -16,10 +16,12 @@ class FixrankRank:
     def __repr__(self):
         return 'FixrankRank("{}", "{}", {})'.format(self.name, self.taxon, self.confidence)
 
+    def __str__(self):
+        return self.taxon
+
 
 class FixrankLineage:
     standard_rank_names = ['domain', 'phylum', 'class', 'order', 'family', 'genus']
-    #abbr_standard_ranks = {x: y for x, y in zip(['k', 'p', 'c', 'o', 'f', 'g'], levels)}
 
     def __init__(self, ranks, standardize=False, min_confidence=None):
         self.ranks = ranks
@@ -34,6 +36,12 @@ class FixrankLineage:
 
         if min_confidence is not None:
             self.trim_at_confidence(min_confidence)
+
+    def __repr__(self):
+        return "FixrankLineage([" + ", ".join(['["{}", "{}", {}]'.format(rank.name, rank.taxon, rank.confidence) for rank in self.ranks]) + "])"
+
+    def __str__(self):
+        return ";".join([str(rank) for rank in self.ranks])
 
     def __eq__(self, other):
         '''lineages are equal if all their ranks are'''
@@ -110,7 +118,12 @@ class FixrankParser:
         return sid_entry, FixrankLineage(ranks[1:])
 
     @classmethod
-    def parse_line(cls, line, delimiter="\t"):
+    def parse_line(cls, line):
         '''parse a line into seq id and lineage'''
-        entries = line.rstrip().split(delimiter)
+        entries = line.rstrip().split("\t")
         return cls.parse_entries(entries)
+
+    @classmethod
+    def parse_lines(cls, lines):
+        for line in lines:
+            pass

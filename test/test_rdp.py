@@ -7,11 +7,17 @@ unit tests for rdp
 from caravan import rdp
 import pytest
 
-class TestRankRepr:
+class WithRank:
+    rank = rdp.FixrankRank('domain', 'Bacteria', '0.8')
+
+class TestRankRepr(WithRank):
     def test_correct(self):
-        rank = rdp.FixrankRank('domain', 'Bacteria', '0.8')
         rep = 'FixrankRank("domain", "Bacteria", 0.8)'
-        assert repr(rank) == rep
+        assert repr(self.rank) == rep
+
+class TestRankStr(WithRank):
+    def test_correct(self):
+        assert str(self.rank) == 'Bacteria'
 
 class TestRankEqual:
     def test_correct(self):
@@ -34,6 +40,18 @@ class TestLineageEqual:
         lin1 = rdp.FixrankLineage([['domain', 'Bacteria', 1.0], ['phylum', 'P', 1.0]])
         lin2 = rdp.FixrankLineage([['domain', 'Bacteria', 1.0]])
         assert lin1 != lin2
+
+class WithLineage:
+    lin = rdp.FixrankLineage([['domain', 'Bacteria', 1.0], ['phylum', 'P', 1.0]])
+
+class TestLineageRepr(WithLineage):
+    def test_correct(self):    
+        rep = 'FixrankLineage([["domain", "Bacteria", 1.0], ["phylum", "P", 1.0]])'
+        assert repr(self.lin) == rep
+
+class TestLineageStr(WithLineage):
+    def test_correct(self):
+        assert str(self.lin) == 'Bacteria;P'
 
 class TestParseTriplet:
     def test_correct(self):
