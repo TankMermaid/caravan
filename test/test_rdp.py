@@ -5,7 +5,7 @@ unit tests for rdp
 '''
 
 from caravan import rdp
-import pytest, io
+import pytest, io, json
 
 class WithRank:
     rank = rdp.FixrankRank('domain', 'Bacteria', '0.8')
@@ -86,6 +86,12 @@ class TestRanksToRank:
         sid, lin = rdp.FixrankParser.parse_entries(['seq1', '', 'Root', 'rootrank', '1.0', 'K', 'domain', '1.0', 'P', 'phylum', '0.5', 'C', 'class', '1.0'])
         assert lin.ranks_to_rank('phylum') == [rdp.FixrankRank('domain', 'K', 1.0), rdp.FixrankRank('phylum', 'P', 0.5)]
 
+class TestTrimToRank:
+    def test_correct(self):
+        lin = rdp.FixrankLineage([['domain', 'D', 1.0], ['phylum', 'P', 1.0], ['class', 'C', 0.75], ['order', 'O', 1.0], ['family', 'F', 1.0], ['genus', 'G', 1.0]])
+        lin.trim_at_rank('phylum')
+        assert lin == rdp.FixrankLineage([['domain', 'D', 1.0], ['phylum', 'P', 1.0]])
+
 class TestParseLine:
     def test_correct(self):
         line = 'seq494517;size=2;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Proteobacteria"\tphylum\t1.0\tAlphaproteobacteria\tclass\t0.89\tCaulobacterales\torder\t0.42\tCaulobacteraceae\tfamily\t0.41\tBrevundimonas\tgenus\t0.38\n'
@@ -96,8 +102,7 @@ class TestParseLine:
 class WithContent:
     content = '''seq1;size=272905;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t0.0\tFlavobacteriia\tclass\t1.0\t"Flavobacteriales"\torder\t1.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0
 seq2;size=229776;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t1.0\tFlavobacteriia\tclass\t0.0\t"Flavobacteriales"\torder\t1.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0
-seq3;size=212890;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t1.0\tFlavobacteriia\tclass\t1.0\t"Flavobacteriales"\torder\t0.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0
-'''
+seq3;size=212890;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t1.0\tFlavobacteriia\tclass\t1.0\t"Flavobacteriales"\torder\t0.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0'''
 
 class TestParseLines(WithContent):
     def test_correct(self):
@@ -109,10 +114,9 @@ class TestParseLines(WithContent):
 class TestParseFile(WithContent):
     def test_correct(self):
         output_fh = io.StringIO()
-        fixrank = io.StringIO()
-        fixrank.write(self.content)
+        fixrank = io.StringIO(self.content)
         rdp.FixrankParser.parse_file(fixrank, 'p', output_fh, 0.5)
 
-        output = json.load(output_fh.getvalue())
+        output = json.loads(output_fh.getvalue())
         expected = {'seq1': 'Bacteria', 'seq2': 'Bacteria;Bacteroidetes', 'seq3': 'Bacteria;Bacteroidetes'}
         assert output == expected

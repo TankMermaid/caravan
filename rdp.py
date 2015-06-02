@@ -160,5 +160,5 @@ class FixrankParser:
         '''
 
         rank = rank_abbr_map[level]
-        mapping = cls.parse_lines(fixrank, min_conf)
+        mapping = cls.parse_lines(fixrank, min_conf, rank=rank)
         json.dump(mapping, output)
