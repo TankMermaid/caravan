@@ -2,7 +2,10 @@
 parse fixrank files output by classifier.jar
 '''
 
-import csv, re, itertools
+import csv, re, itertools, json
+
+rank_abbreviations = ['k', 'p', 'c', 'o', 'f', 'g']
+rank_abbr_map = {'k': 'domain', 'p': 'phylum', 'c': 'class', 'o': 'order', 'f': 'family', 'g': 'genus'}
 
 class FixrankRank:
     def __init__(self, name, taxon, confidence):
@@ -86,6 +89,10 @@ class FixrankLineage:
 
         return out
 
+    def trim_at_rank(self, name):
+        '''trim my entries to a rank'''
+        self.ranks = self.ranks_to_rank(name)
+
 
 class FixrankParser:
     @staticmethod
@@ -124,12 +131,34 @@ class FixrankParser:
         return cls.parse_entries(entries)
 
     @classmethod
-    def parse_lines(cls, lines, min_confidence):
+    def parse_lines(cls, lines, min_confidence=None, rank=None):
+        '''turn lines into a dictionary seq id => lineage string'''
         mapping = {}
         for line in lines:
-            sid, lineage = cls.parse_line(line)
+            sid, lineage = cls.parse_line(line.rstrip())
             lineage.standardize()
-            lineage.trim_at_confidence(min_confidence)
+
+            if min_confidence is not None:
+                lineage.trim_at_confidence(min_confidence)
+
+            if rank is not None:
+                lineage.trim_at_rank(rank)
+
             mapping[sid] = str(lineage)
 
         return mapping
+
+    @classmethod
+    def parse_file(cls, fixrank, level, output, min_conf):
+        '''
+        Parse a fixrank file and output the mapping json
+
+        fixrank : read filehandle
+        level : string, one of 'k', 'p', 'c', etc.
+        output : write filehandle
+        min_conf : float
+        '''
+
+        rank = rank_abbr_map[level]
+        mapping = cls.parse_lines(fixrank, min_conf)
+        json.dump(mapping, output)

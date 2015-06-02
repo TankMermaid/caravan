@@ -5,7 +5,7 @@ command-line interface
 '''
 
 import argparse, sys
-import split, check_intersect, primers, barcodes, derep, usearch, tax, table, parse, submit
+import split, check_intersect, primers, barcodes, derep, usearch, tax, table, parse, submit, rdp
 
 def parse_args(args=None):
     '''
@@ -88,6 +88,13 @@ def parse_args(args=None):
     p.add_argument('--index', '-i', type=argparse.FileType('w'), help='output json index file')
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='dereplicated fasta')
     p.set_defaults(func=derep.Dereplicator)
+
+    p = subparser('rdp', help='make a mapping file using an RDP fixrank')
+    p.add_argument('fixrank', type=argparse.FileType('r'), help='input fixrank file from classifier.jar')
+    p.add_argument('level', choices=rdp.rank_abbreviations, help='taxonomic level')
+    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output json')
+    p.add_argument('--min_conf', '-m', type=float, default=0.8, help='minimum confidence to assign rank')
+    p.set_defaults(func=rdp.FixrankParser.parse_file)
 
     p = subparser('denovo', help='cluster de novo with usearch')
     p.add_argument('radius', type=float, help='0.0-100.0, recommended at most 3.0 = 97%% identity')
