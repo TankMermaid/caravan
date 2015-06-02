@@ -5,7 +5,7 @@ unit tests for rdp
 '''
 
 from caravan import rdp
-import pytest, io, json
+import pytest, io, json, os.path
 
 class WithRank:
     rank = rdp.FixrankRank('domain', 'Bacteria', '0.8')
@@ -103,6 +103,8 @@ class WithContent:
     content = '''seq1;size=272905;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t0.0\tFlavobacteriia\tclass\t1.0\t"Flavobacteriales"\torder\t1.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0
 seq2;size=229776;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t1.0\tFlavobacteriia\tclass\t0.0\t"Flavobacteriales"\torder\t1.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0
 seq3;size=212890;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t1.0\tFlavobacteriia\tclass\t1.0\t"Flavobacteriales"\torder\t0.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0'''
+    lines = content.split("\n")
+    fixrank = io.StringIO(content)
 
 class TestParseLines(WithContent):
     def test_correct(self):
@@ -114,9 +116,42 @@ class TestParseLines(WithContent):
 class TestParseFile(WithContent):
     def test_correct(self):
         output_fh = io.StringIO()
-        fixrank = io.StringIO(self.content)
-        rdp.FixrankParser.parse_file(fixrank, 'p', output_fh, 0.5)
+        rdp.FixrankParser.parse_file(self.fixrank, 'p', output_fh, 0.5)
 
         output = json.loads(output_fh.getvalue())
         expected = {'seq1': 'Bacteria', 'seq2': 'Bacteria;Bacteroidetes', 'seq3': 'Bacteria;Bacteroidetes'}
         assert output == expected
+
+class TestParseLinesAllRanks(WithContent):
+    def test_correct(self):
+        mappings = rdp.FixrankParser.parse_lines_all_ranks(self.lines)
+
+        for rank_abbr in rdp.rank_abbreviations:
+            assert rank_abbr in mappings
+
+        assert mappings['k']['seq1'] == 'Bacteria'
+        assert mappings['p']['seq1'] == 'Bacteria;Bacteroidetes'
+        assert mappings['g']['seq1'] == 'Bacteria;Bacteroidetes;Flavobacteriia;Flavobacteriales;Flavobacteriaceae;Flavobacterium'
+
+class WithTmpdir(WithContent):
+    def __init__(self, tmpdir):
+        self.output_base_path = tmpdir.join('rdp_X.json')
+        self.output_base = str(output_base_path)
+        self.output_dir = str(output_base_path.dirpath())
+        self.repl = 'X'
+
+class TestSubstitutedFilehandles(WithTmpdir):
+    def test_correct(self, tmpdir):        
+        handles = rdp.FixrankParser.substituted_filehandles(self.output_base, self.repl)
+
+        for a in ['k', 'p']:
+            assert handles[a].name == os.path.join(self.output_dir, 'rdp_{}.json'.format(a))
+
+class TestParseFileAllRanks(WithTmpdir):
+    def test_correct(self, tmpdir):
+        rdp.FixrankParser.parse_file_all_ranks(self.fixrank, self.output_base, self.repl)
+
+        with open(os.path.join(self.output_dir, 'rdp_p.json')) as f:
+            p_map = json.load(f)
+
+        assert p_map['seq1'] == 'Bacteria;Bacteroidetes'

@@ -93,6 +93,9 @@ class FixrankLineage:
         '''trim my entries to a rank'''
         self.ranks = self.ranks_to_rank(name)
 
+    def lineage_at_rank(self, name):
+        return FixrankLineage(self.ranks_to_rank(name))
+
 
 class FixrankParser:
     @staticmethod
@@ -133,6 +136,7 @@ class FixrankParser:
     @classmethod
     def parse_lines(cls, lines, min_confidence=None, rank=None):
         '''turn lines into a dictionary seq id => lineage string'''
+
         mapping = {}
         for line in lines:
             sid, lineage = cls.parse_line(line.rstrip())
@@ -149,6 +153,25 @@ class FixrankParser:
         return mapping
 
     @classmethod
+    def parse_lines_all_ranks(cls, lines, min_confidence=None):
+        '''turn lines into {'k' => {seq id => lineage}, 'p' => ...}'''
+
+        mappings = {abbr: {} for abbr in rank_abbreviations}
+        for line in lines:
+            sid, lineage = cls.parse_line(line.rstrip())
+            lineage.standardize()
+
+            if min_confidence is not None:
+                lineage.trim_at_confidence(min_confidence)
+
+            for abbr in rank_abbreviations:
+                rank = rank_abbr_map[abbr]
+                trimmed_lin = lineage.lineage_at_rank(rank)
+                mappings[abbr][sid] = str(trimmed_lin)
+
+        return mappings
+
+    @classmethod
     def parse_file(cls, fixrank, level, output, min_conf):
         '''
         Parse a fixrank file and output the mapping json
@@ -162,3 +185,20 @@ class FixrankParser:
         rank = rank_abbr_map[level]
         mapping = cls.parse_lines(fixrank, min_conf, rank=rank)
         json.dump(mapping, output)
+
+    @staticmethod
+    def substituted_filehandles(output_base, repl):
+        '''
+        open handles to many files by replacing repl in output_base with
+        one of the rank abbreviations
+        '''
+
+        return {a: open(re.sub(repl, a, output_base), 'w') for a in rank_abbreviations}
+
+    @classmethod
+    def parse_file_all_ranks(cls, fixrank, output_base, repl, min_conf):
+        handles = cls.substituted_filehandles(output_base, repl)
+        mappings = cls.parse_lines_all_ranks(fixrank, min_conf)
+
+        for a in rank_abbreviations:
+            json.dump(mappings[a], handles[a])
