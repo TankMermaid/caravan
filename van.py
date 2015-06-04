@@ -17,7 +17,8 @@ def parse_args(args=None):
     '''
 
     parser = argparse.ArgumentParser(description="caravan: a 16S pipeline", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    subparsers = parser.add_subparsers(title="commands")
+    subparsers = parser.add_subparsers(title="commands", metavar='cmd')
+    subparsers.required = True
 
     def subparser(name, **kwargs):
         return subparsers.add_parser(name, formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
@@ -37,6 +38,8 @@ def parse_args(args=None):
     p.add_argument('reverse', help='reverse fastq')
     p.add_argument('--truncqual', '-q', default=2, type=int, help='truncate the forward and reverse reads at the first Q<=q')
     p.add_argument('--output', '-o', default='merge.fq', help='merged fastq')
+    p.add_argument('--size', '-s', type=int, default=None, help='intended product size? will trash merges that don\'t fit')
+    p.add_argument('--size_var', '-v', type=int, default=0, help='allowed variance in product size?')
     p.set_defaults(func=usearch.Usearcher().merge)
 
     p = subparser('find_primers', help='find locations of forward (and reverse) primers')

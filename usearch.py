@@ -40,11 +40,16 @@ class Usearcher:
 
         return cmd
 
-    def merge(self, forward, reverse, output, truncqual=None):
+    def merge(self, forward, reverse, output, truncqual=None, size=None, size_var=0):
         cmd = ['usearch', '-fastq_mergepairs', forward, '-reverse', reverse, '-fastqout', output]
 
         if truncqual is not None:
             cmd += ['-fastq_truncqual', truncqual]
+
+        if size is not None:
+            min_len = size - size_var
+            max_len = size + size_var
+            cmd += ['-fastq_minmergelen', min_len, '-fastq_maxmergelen', max_len]
 
         return self.run(cmd)
 
