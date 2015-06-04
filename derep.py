@@ -80,7 +80,7 @@ class Dereplicator():
         '''
 
         # get the seqs in abundance order
-        seqs_sizes = sorted(counts.iteritems(), key=itemgetter(1), reverse=True)
+        seqs_sizes = sorted(counts.items(), key=itemgetter(1), reverse=True)
 
         SeqIO.write(cls.new_fasta_entries(seqs_sizes, min_counts), output, 'fasta')
 
