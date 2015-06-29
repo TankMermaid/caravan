@@ -5,7 +5,7 @@ command-line interface
 '''
 
 import argparse, sys
-import split, check_intersect, primers, barcodes, derep, usearch, tax, table, parse, submit, rdp
+import split, check_intersect, primers, barcodes, derep, usearch, tax, table, parse, rdp
 
 def parse_args(args=None):
     '''
@@ -151,10 +151,6 @@ def parse_args(args=None):
     p.add_argument('--rename', '-r', action='store_true', help='use a two-column sample list to rename them?')
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output seq table')
     p.set_defaults(func=table.Tabler.seq_table)
-
-    p = subparser('submit', help='submit jobs')
-    p.add_argument('jobs', help='json jobs file')
-    p.set_defaults(func=submit.Submitter.submit_jobs)
 
     args = parser.parse_args(args)
     opts = vars(args)
