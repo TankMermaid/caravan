@@ -2,7 +2,7 @@
 class for parsing blast6 files
 '''
 
-import util, json
+import util, yaml
 
 class Parser:
     @staticmethod
@@ -45,7 +45,7 @@ class Parser:
         return membership
 
     @classmethod
-    def map_to_json(cls, map_fn, json_fn):
+    def map_to_yaml(cls, map_fn, yaml_fn):
         with open(map_fn) as f:
             line = f.readline()
 
@@ -59,5 +59,5 @@ class Parser:
         else:
             raise RuntimeError("mapping file with {} columsn not recognized as blast6 or uparse".format(n_fields))
 
-        with open(json_fn, 'w') as f:
-            json.dump(d, f)
+        with open(yml_fn, 'w') as f:
+            yaml.dump(d, f)

@@ -2,7 +2,7 @@
 parse fixrank files output by classifier.jar
 '''
 
-import csv, re, itertools, json
+import csv, re, itertools, yaml
 
 rank_abbreviations = ['k', 'p', 'c', 'o', 'f', 'g']
 rank_abbr_map = {'k': 'domain', 'p': 'phylum', 'c': 'class', 'o': 'order', 'f': 'family', 'g': 'genus'}
@@ -174,7 +174,7 @@ class FixrankParser:
     @classmethod
     def parse_file(cls, fixrank, level, output, min_conf):
         '''
-        Parse a fixrank file and output the mapping json
+        Parse a fixrank file and output the mapping yaml
 
         fixrank : read filehandle
         level : string, one of 'k', 'p', 'c', etc.
@@ -184,7 +184,7 @@ class FixrankParser:
 
         rank = rank_abbr_map[level]
         mapping = cls.parse_lines(fixrank, min_conf, rank=rank)
-        json.dump(mapping, output)
+        yaml.dump(mapping, output)
 
     @staticmethod
     def substituted_filehandles(output_base, repl):
@@ -201,4 +201,4 @@ class FixrankParser:
         mappings = cls.parse_lines_all_ranks(fixrank, min_conf)
 
         for a in rank_abbreviations:
-            json.dump(mappings[a], handles[a])
+            yaml.dump(mappings[a], handles[a])

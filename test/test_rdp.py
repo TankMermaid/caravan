@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 unit tests for rdp
 '''
 
 from caravan import rdp
-import pytest, io, json, os.path
+import pytest, io, yaml, os.path
 
 class WithRank:
     rank = rdp.FixrankRank('domain', 'Bacteria', '0.8')
@@ -118,7 +118,7 @@ class TestParseFile(WithContent):
         output_fh = io.StringIO()
         rdp.FixrankParser.parse_file(self.fixrank, 'p', output_fh, 0.5)
 
-        output = json.loads(output_fh.getvalue())
+        output = yaml.load(output_fh.getvalue())
         expected = {'seq1': 'Bacteria', 'seq2': 'Bacteria;Bacteroidetes', 'seq3': 'Bacteria;Bacteroidetes'}
         assert output == expected
 
@@ -135,7 +135,7 @@ class TestParseLinesAllRanks(WithContent):
 
 class WithTmpdir(WithContent):
     def __init__(self, tmpdir):
-        self.output_base_path = tmpdir.join('rdp_X.json')
+        self.output_base_path = tmpdir.join('rdp_X.yml')
         self.output_base = str(output_base_path)
         self.output_dir = str(output_base_path.dirpath())
         self.repl = 'X'
@@ -145,21 +145,21 @@ class TestSubstitutedFilehandles(WithTmpdir):
         handles = rdp.FixrankParser.substituted_filehandles(self.output_base, self.repl)
 
         for a in ['k', 'p']:
-            assert handles[a].name == os.path.join(self.output_dir, 'rdp_{}.json'.format(a))
+            assert handles[a].name == os.path.join(self.output_dir, 'rdp_{}.yml'.format(a))
 
 class TestParseFileAllRanks(WithTmpdir):
     def test_correct(self, tmpdir):
         rdp.FixrankParser.parse_file_all_ranks(self.fixrank, self.output_base, self.repl)
 
-        with open(os.path.join(self.output_dir, 'rdp_p.json')) as f:
-            p_map = json.load(f)
+        with open(os.path.join(self.output_dir, 'rdp_p.yml')) as f:
+            p_map = yaml.load(f)
 
         assert p_map['seq1'] == 'Bacteria;Bacteroidetes'
 
     def test_correct_with_confidence(self, tmpdir):
         rdp.FixrankParser.parse_file_all_ranks(self.fixrank, self.output_base, self.repl, 0.5)
 
-        with open(os.path.join(self.output_dir, 'rdp_p.json')) as f:
-            p_map = json.load(f)
+        with open(os.path.join(self.output_dir, 'rdp_p.yml')) as f:
+            p_map = yaml.load(f)
 
         assert p_map['seq1'] == 'Bacteria'

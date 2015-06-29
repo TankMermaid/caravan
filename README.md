@@ -3,7 +3,7 @@ caravan
 
 Caravan is a fork of SmileTrain that I made in order to
 * rework the command-line interface
-* change in the intermediate file types (into json)
+* change in the intermediate file types (into yaml)
 * change the submission style (to explictly use ssub)
 * move simple functions to quick perl tools
 

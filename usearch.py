@@ -2,7 +2,7 @@
 usearch wrapper. implements a nice parser that has more helpful help messages.
 '''
 
-import argparse, os, sys, subprocess, json, os.path
+import argparse, os, sys, subprocess, yaml, os.path
 from Bio import SeqRecord, SeqIO, Seq
 
 class Usearcher:
@@ -169,9 +169,9 @@ class Usearcher:
         self.run(cmd)
 
     def utax(self, fastx, output):
-        opts_fn = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'utax.json')
+        opts_fn = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'utax.yml')
         with open(opts_fn) as f:
-            opts = json.load(f)
+            opts = yaml.load(f)
 
         cmd = ['usearch', '-utax', fastx, '-db', opts['db'], '-taxconfs', opts['tc'], '-tt', opts['tt'],
             '-utaxout', output]

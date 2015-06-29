@@ -2,11 +2,11 @@
 
 '''
 Create OTU tables using information from
-    * a membership .json that has a hash sequence => OTU
-    * a provenances .json that has a hash sequence => {sample => counts}
+    * a membership .yml that has a hash sequence => OTU
+    * a provenances .yml that has a hash sequence => {sample => counts}
 '''
 
-import re, sys, argparse, json, warnings
+import re, sys, argparse, yaml, warnings
 from operator import itemgetter
 
 class Tabler:
@@ -77,10 +77,10 @@ class Tabler:
     def otu_table(cls, membership, provenances, output, samples=None, rename=False):
         # get the index
         with open(provenances) as f:
-            provenances_dict = json.load(f)
+            provenances_dict = yaml.load(f)
 
         with open(membership) as f:
-            membership_dict = json.load(f)
+            membership_dict = yaml.load(f)
 
         cls.table(membership_dict, provenances_dict, output, samples, rename)
 
@@ -88,7 +88,7 @@ class Tabler:
     def seq_table(cls, provenances, output, samples=None, rename=False):
         # get the index
         with open(provenances) as f:
-            provenances_dict = json.load(f)
+            provenances_dict = yaml.load(f)
 
         # make up membership as self => self
         membership_dict = {seq: seq for seq in provenances_dict}
