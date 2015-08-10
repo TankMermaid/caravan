@@ -2,7 +2,7 @@
 usearch wrapper. implements a nice parser that has more helpful help messages.
 '''
 
-import argparse, os, sys, subprocess, StringIO, json, os.path
+import argparse, os, sys, subprocess, yaml, os.path
 from Bio import SeqRecord, SeqIO, Seq
 
 class Usearcher:
@@ -40,11 +40,16 @@ class Usearcher:
 
         return cmd
 
-    def merge(self, forward, reverse, output, truncqual=None):
+    def merge(self, forward, reverse, output, truncqual=None, size=None, size_var=0):
         cmd = ['usearch', '-fastq_mergepairs', forward, '-reverse', reverse, '-fastqout', output]
 
         if truncqual is not None:
             cmd += ['-fastq_truncqual', truncqual]
+
+        if size is not None:
+            min_len = size - size_var
+            max_len = size + size_var
+            cmd += ['-fastq_minmergelen', min_len, '-fastq_maxmergelen', max_len]
 
         return self.run(cmd)
 
@@ -164,9 +169,9 @@ class Usearcher:
         self.run(cmd)
 
     def utax(self, fastx, output):
-        opts_fn = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'utax.json')
+        opts_fn = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'utax.yml')
         with open(opts_fn) as f:
-            opts = json.load(f)
+            opts = yaml.load(f)
 
         cmd = ['usearch', '-utax', fastx, '-db', opts['db'], '-taxconfs', opts['tc'], '-tt', opts['tt'],
             '-utaxout', output]

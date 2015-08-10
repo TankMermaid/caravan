@@ -11,7 +11,7 @@ semicolon.
 Sequences that do not reach a minimum number of counts can be dropped.
 '''
 
-import sys, argparse, re, sys, json, itertools
+import sys, argparse, re, sys, yaml, itertools
 from operator import itemgetter
 from Bio import SeqIO, SeqRecord, Seq
 import util
@@ -80,7 +80,7 @@ class Dereplicator():
         '''
 
         # get the seqs in abundance order
-        seqs_sizes = sorted(counts.iteritems(), key=itemgetter(1), reverse=True)
+        seqs_sizes = sorted(counts.items(), key=itemgetter(1), reverse=True)
 
         SeqIO.write(cls.new_fasta_entries(seqs_sizes, min_counts), output, 'fasta')
 
@@ -93,7 +93,7 @@ class Dereplicator():
                 else:
                     provenances["seq%d" %(i+1)] = provenances.pop(seq)
 
-            json.dump(provenances, index)
+            yaml.dump(provenances, index)
 
     @classmethod
     def new_fasta_entries(cls, seqs_sizes, min_counts):

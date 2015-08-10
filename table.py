@@ -2,11 +2,11 @@
 
 '''
 Create OTU tables using information from
-    * a membership .json that has a hash sequence => OTU
-    * a provenances .json that has a hash sequence => {sample => counts}
+    * a membership .yml that has a hash sequence => OTU
+    * a provenances .yml that has a hash sequence => {sample => counts}
 '''
 
-import re, sys, argparse, json
+import re, sys, argparse, yaml, warnings
 from operator import itemgetter
 
 class Tabler:
@@ -51,14 +51,21 @@ class Tabler:
                 old_new_samples = [line.split() for line in open(samples)]
                 samples = [x[1] for x in old_new_samples]
 
-                # update the table with the new names
+                # check that, for every new name, the old name is actually in the list
                 for old_s, new_s in old_new_samples:
-                    table[new_s] = table.pop(old_s)
+                    if old_s not in table:
+                        warnings.warn('sample "{}" in rename list (alias "{}") but not the provenances'.format(old_s, new_s), stacklevel=2)
+                        samples.remove(new_s)
+
+                # update the table with the new names that were found in the provenance
+                for old_s, new_s in old_new_samples:
+                    if new_s in samples:
+                        table[new_s] = table.pop(old_s)
             else:
                 samples = [line.split()[0] for line in open(samples)]
             
         # sort otu names by decreasing abundance
-        sorted_otus_abunds = sorted(otu_abunds.iteritems(), key=itemgetter(1), reverse=True)
+        sorted_otus_abunds = sorted(otu_abunds.items(), key=itemgetter(1), reverse=True)
 
         # first, output the header/sample line
         output.write("\t".join(['OTU_ID'] + samples) + "\n")
@@ -70,10 +77,10 @@ class Tabler:
     def otu_table(cls, membership, provenances, output, samples=None, rename=False):
         # get the index
         with open(provenances) as f:
-            provenances_dict = json.load(f)
+            provenances_dict = yaml.load(f)
 
         with open(membership) as f:
-            membership_dict = json.load(f)
+            membership_dict = yaml.load(f)
 
         cls.table(membership_dict, provenances_dict, output, samples, rename)
 
@@ -81,7 +88,7 @@ class Tabler:
     def seq_table(cls, provenances, output, samples=None, rename=False):
         # get the index
         with open(provenances) as f:
-            provenances_dict = json.load(f)
+            provenances_dict = yaml.load(f)
 
         # make up membership as self => self
         membership_dict = {seq: seq for seq in provenances_dict}

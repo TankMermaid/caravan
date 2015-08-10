@@ -22,7 +22,7 @@ def mapper(tmpdir):
 
 class TestMapper:
     def test_correct(self, mapper):
-        record = mapper.next()
+        record = next(mapper)
         assert record.id == 'sample=sample1;1'
 
 
