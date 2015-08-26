@@ -52,6 +52,7 @@ class MappedRecords():
         return record
 
     def recognized_record(self, record):
+        '''does this record have a barcode in our barcode map?'''
         barcode_read = self.parse_barcode(record.id)
 
         if barcode_read in self.adhoc_barcode_map:
@@ -102,7 +103,7 @@ class BarcodeMapper:
     def __init__(self, barcode_fasta, fastx, max_diffs, output, filetype, run=True):
         '''filetype is 'fasta' or 'fastq' '''
 
-        self.barcode_fasta = SeqIO.parse(barcode_fasta, filetype)
+        self.barcode_fasta = SeqIO.parse(barcode_fasta, 'fasta')
         self.fastx_records = SeqIO.parse(fastx, filetype)
         self.max_diffs = max_diffs
         self.output = output
