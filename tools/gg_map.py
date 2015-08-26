@@ -6,9 +6,9 @@ levels = ['k', 'p', 'c', 'o', 'f', 'g', 's']
 
 def truncate_taxonomy(tax, level):
     # remove the weird prefixes
-    tax = re.sub('[kpcofgs]__', )
+    tax = re.sub('[kpcofgs]__', '', tax)
 
-    fields = tax.split('; ')
+    fields = [f for f in tax.split('; ') if f != '']
     level_idx = min([levels.index(level), len(fields) - 1]) + 1
 
     return ','.join(fields[0: level_idx])
@@ -24,12 +24,12 @@ def tax_map(b6_entries, tax_entries, level):
 
     sid2tax = {}
     for entry in tax_entries:
-        fields = entry.split("\t")
+        fields = entry.rstrip().split("\t")
         ggid = fields[0]
         tax = truncate_taxonomy(fields[1], level)
 
         if ggid in ggid2sid:
-            sid = ggid2sid.pop(sid)
+            sid = ggid2sid.pop(ggid)
             sid2tax[sid] = tax
 
     return sid2tax

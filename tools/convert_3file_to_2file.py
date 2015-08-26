@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import argparse, sys, os, itertools, gzip
+import argparse, sys, os, gzip
 from Bio import SeqIO
 
 def shared_id(rid):
@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     # open up the filehandles, zipped or not
     if args.gzip:
-        opener = lambda x: gzip.open(x)
+        opener = lambda x: gzip.open(x, 'rt') # open a gzip in text format
     else:
         opener = lambda x: open(x)
 
@@ -34,7 +34,7 @@ if __name__ == '__main__':
         ri = SeqIO.parse(rih, 'fastq')
         ii = SeqIO.parse(iih, 'fastq')
         
-        for fr, rr, ir in itertools.izip(fi, ri, ii):
+        for fr, rr, ir in zip(fi, ri, ii):
             # check that the reads match
             if not (shared_id(fr.id) == shared_id(rr.id) == shared_id(ir.id)):
                 raise RuntimeError("ids in corresponding entries did not match: %s %s %s" %(fr.id, rr.id, ir.id))
