@@ -93,7 +93,7 @@ class Dereplicator():
                 else:
                     provenances["seq%d" %(i+1)] = provenances.pop(seq)
 
-            yaml.dump(provenances, index)
+            yaml.dump(provenances, index, default_flow_style=False)
 
     @classmethod
     def new_fasta_entries(cls, seqs_sizes, min_counts):

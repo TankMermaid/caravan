@@ -60,4 +60,4 @@ class Parser:
             raise RuntimeError("mapping file with {} columsn not recognized as blast6 or uparse".format(n_fields))
 
         with open(yml_fn, 'w') as f:
-            yaml.dump(d, f)
+            yaml.dump(d, f, default_flow_style=False)
