@@ -32,10 +32,10 @@ class TrimmedRecords():
     def __iter__(self):
         return self
 
-    def next(self):
-        record = self.fastq_records.next()
+    def __next__(self):
+        record = next(self.fastq_records)
         while not self.is_valid_record(record.id):
-            record = self.fastq_records.next()
+            record = next(self.fastq_records)
 
         trim_idx = self.trims[record.id]
         if self.reverse:
