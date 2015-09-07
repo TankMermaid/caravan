@@ -118,7 +118,9 @@ class FixrankParser:
         assert entries[1] == ""
 
         # the rest of the entries should divide into triplets
-        assert (len(entries) - 2) % 3 == 0
+        if (len(entries) - 2) % 3 != 0:
+            raise RuntimeError("could not parse fixrank with fields {}".format(entries))
+        
         entry_triplets = zip(*[iter(entries[2:])] * 3)
         ranks = [cls.parse_triplet(t) for t in entry_triplets]
 
@@ -184,7 +186,7 @@ class FixrankParser:
 
         rank = rank_abbr_map[level]
         mapping = cls.parse_lines(fixrank, min_conf, rank=rank)
-        yaml.dump(mapping, output)
+        yaml.dump(mapping, output, default_flow_style=False)
 
     @staticmethod
     def substituted_filehandles(output_base, repl):
@@ -201,4 +203,4 @@ class FixrankParser:
         mappings = cls.parse_lines_all_ranks(fixrank, min_conf)
 
         for a in rank_abbreviations:
-            yaml.dump(mappings[a], handles[a])
+            yaml.dump(mappings[a], handles[a], default_flow_style=False)

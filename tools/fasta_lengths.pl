@@ -5,7 +5,7 @@ use strict;
 use 5.10.1;
 
 if (grep($_ eq "-h" || $_ eq "--help", @ARGV)) {
-	say "usage: fasta_lengths.pl fastq";
+	say "usage: fasta_lengths.pl fasta";
 	exit;
 }
 

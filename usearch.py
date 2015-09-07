@@ -25,7 +25,7 @@ class Usearcher:
                 self.out = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as e:
                 # if there is an error, look for the line just below "fatal error"
-                err_lines = e.output.split("\n")
+                err_lines = e.output.decode().split("\n")
                 
                 fatal_error = '---Fatal error---'
                 invalid_command = 'Invalid command line'
@@ -36,7 +36,7 @@ class Usearcher:
                     err_i = err_lines.index(invalid_command)
                     desc_line = err_lines[err_i + 1]
                 
-                raise RuntimeError("when running with command '%s', usearch failed with message: '%s'" %(cmd_string, desc_line))
+                raise RuntimeError("when running with command '%s', usearch failed with message:\n%s" %(cmd_string, desc_line))
 
         return cmd
 
