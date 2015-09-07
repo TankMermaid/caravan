@@ -11,7 +11,7 @@ semicolon.
 Sequences that do not reach a minimum number of counts can be dropped.
 '''
 
-import sys, argparse, re, sys, yaml, itertools
+import sys, argparse, re, sys, yaml, itertools, math
 from operator import itemgetter
 from Bio import SeqIO, SeqRecord, Seq
 import util
@@ -47,9 +47,9 @@ class Dereplicator():
         '''
         Process the input fasta entries.
 
-        Populate a dictionary
-        {seq => {sample => counts}}. Use the special sample key None to
-        indicate the sum of all counts for that sequence.
+        Populate two dictionaries:
+        counts: {seq => total counts across samples}
+        provenances: {seq => {sample => counts in that sample}}
         '''
         
         counts = {}
@@ -82,23 +82,28 @@ class Dereplicator():
         # get the seqs in abundance order
         seqs_sizes = sorted(counts.items(), key=itemgetter(1), reverse=True)
 
-        SeqIO.write(cls.new_fasta_entries(seqs_sizes, min_counts), output, 'fasta')
+        # rename the sequences to use padded sizes
+        n_digits = math.ceil(math.log10(len(seqs_sizes)))
+        padded_name = lambda x: "seq" + str(x).zfill(n_digits)
+        names_seqs_sizes = [[padded_name(i + 1), seq, size] for i, [seq, size] in enumerate(seqs_sizes)]
+
+        SeqIO.write(cls.new_fasta_entries(names_seqs_sizes, min_counts), output, 'fasta')
 
         if provenances is not None and index is not None:
             # remove seqs below the count threshold and rename the provenances to be in
             # the ordered seq1, seq2, etc.
-            for i, [seq, size] in enumerate(seqs_sizes):
+            for [name, seq, size] in names_seqs_sizes:
                 if size < min_counts:
                     del provenances[seq]
                 else:
-                    provenances["seq%d" %(i+1)] = provenances.pop(seq)
+                    provenances[name] = provenances.pop(seq)
 
-            yaml.dump(provenances, index)
+            yaml.dump(provenances, index, default_flow_style=False)
 
     @classmethod
-    def new_fasta_entries(cls, seqs_sizes, min_counts):
+    def new_fasta_entries(cls, names_seqs_sizes, min_counts):
         '''yield the list in abundance order'''
 
-        for i, [seq, size] in enumerate(seqs_sizes):
+        for [name, seq, size] in names_seqs_sizes:
             if size >= min_counts:
-                yield SeqRecord.SeqRecord(Seq.Seq(seq), id="seq%d;size=%d;" %(i+1, size), description='')
+                yield SeqRecord.SeqRecord(Seq.Seq(seq), id="%s;size=%d;" %(name, size), description='')
