@@ -37,17 +37,12 @@ def parse_args(args=None):
     p.add_argument('--size_var', '-v', type=int, default=0, help='allowed variance in product size?')
     p.set_defaults(func=usearch.Usearcher().merge)
 
-    p = subparser('find_primers', help='find locations of forward (and reverse) primers')
-    p.add_argument('primers_fasta', help='must have entry "forward" (optionally also "reverse")')
-    p.add_argument('fastx', help='query fastx')
-    p.add_argument('--output', '-o', default='trim.usr', help='output trim file')
-    p.add_argument('--max_diffs', '-m', default=1, type=int, help='max mismatches allowed')
-    p.set_defaults(func=usearch.Usearcher().primer_search)
-
-    p = subparser('trim_primers', help='trim located primers')
-    p.add_argument('trim_file', help='trim file output by find_primers')
-    p.add_argument('fastq', help='trimmed fastq')
-    p.add_argument('--output', '-o', default='out.fq')
+    p = subparser('trim', help='remove primer')
+    p.add_argument('primer')
+    p.add_argument('fastq')
+    p.add_argument('--max_diffs', '-d', default=2, type=int)
+    p.add_argument('--window', '-w', default=20 ,type=int)
+    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'))
     p.set_defaults(func=primers.PrimerRemover)
 
     p = subparser('filter', help='remove low-quality reads')
@@ -78,13 +73,6 @@ def parse_args(args=None):
     p.add_argument('fastq', help='input fastq')
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output fastq')
     p.set_defaults(func=intersect.Intersecter)
-
-    p = subparser('both_primers', help='find and trim both primers at once')
-    p.add_argument('primers_fasta')
-    p.add_argument('fastx', help='query')
-    p.add_argument('--output', '-o', default='trim.fa', help='output fasta')
-    p.add_argument('--max_diffs', '-m', default=1, type=int, help='max mismatches allowed')
-    p.set_defaults(func=usearch.Usearcher().pcr_search)
 
     p = subparser('derep', help='find unique sequences (and write index file)')
     p.add_argument('fasta', help='input fasta')
