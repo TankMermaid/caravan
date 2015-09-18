@@ -5,7 +5,7 @@ command-line interface
 '''
 
 import argparse, sys
-import split, check_intersect, primers, barcodes, derep, usearch, tax, table, parse, rdp
+import split, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect
 
 def parse_args(args=None):
     '''
@@ -22,11 +22,6 @@ def parse_args(args=None):
 
     def subparser(name, **kwargs):
         return subparsers.add_parser(name, formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
-
-    p = subparser('check_intersect', help='check that for and rev fastqs have matched read names')
-    p.add_argument('forward', help='forward fastq')
-    p.add_argument('reverse', help='reverse fastq')
-    p.set_defaults(func=check_intersect.IntersectChecker)
 
     p = subparser('split', help='split fastx into chunks based on size')
     p.add_argument('fastx', help='file to be split')
@@ -66,7 +61,7 @@ def parse_args(args=None):
     p.add_argument('barcode_fasta')
     p.add_argument('fastx', help='input fastq')
     p.add_argument('--max_diffs', '-m', type=int, default=1, help='number of barcode mismatches allowed')
-    p.add_argument('--output', '-o', default='mapped.fq', help='output fastq')
+    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output tsv')
     p.set_defaults(filetype='fastq')
     p.set_defaults(func=barcodes.BarcodeMapper)
 
@@ -74,9 +69,15 @@ def parse_args(args=None):
     p.add_argument('barcode_fasta')
     p.add_argument('fastx', help='input fasta')
     p.add_argument('--max_diffs', '-m', type=int, default=1, help='number of barcode mismatches allowed')
-    p.add_argument('--output', '-o', default='mapped.fa', help='output fasta')
+    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output tsv')
     p.set_defaults(filetype='fasta')
     p.set_defaults(func=barcodes.BarcodeMapper)
+
+    p = subparser('intersect', help='intersect mapping file and fastq')
+    p.add_argument('mapping', type=argparse.FileType('r'), help='tsv from demultiplex')
+    p.add_argument('fastq', help='input fastq')
+    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output fastq')
+    p.set_defaults(func=intersect.Intersecter)
 
     p = subparser('both_primers', help='find and trim both primers at once')
     p.add_argument('primers_fasta')

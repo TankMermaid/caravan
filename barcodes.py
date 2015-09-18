@@ -1,23 +1,22 @@
 '''
-Demultiplex reads by mapping the barcode read to the sample names from a barcode mapping
+Demultiplex reads by mapping the index (aka "barcode") reads to the sample
+names. Sample names and barcodes are given in a from a barcode mapping
 file.
 
-Given a tab-separated barcode mapping file like
-    donor1_day5   ACGT
+Given a barcode fasta file with entries like
+    >sample1
+    AAAA
+    >sample2
+    TTTT
 
-the first read mapping to that barcode, say
-    @OURSEQ:lolapalooza1234#ACGT/1
-    AACCGGTT
+a read mapping to that barcode, say
+    @foo
+    AAAA
     +
-    abcdefgh
+    JJJJ
 
-becomes output like
-    @sample=donor1_day5;1
-    AACCGGTT
-    +
-    abcdefgh
-    
-where the ;1 means it's the first read that mapped to donor1_day5.
+becomes a line in the output like
+    foo [tab] sample1
 '''
 
 import re, operator, itertools
@@ -41,19 +40,17 @@ class MappedRecords():
         while not self.recognized_record(record):
             record = next(self.fastx_records)
 
-        sample = self.adhoc_barcode_map[self.parse_barcode(record.id)]
+        sample = self.adhoc_barcode_map[str(record.seq)]
         if sample not in self.sample_counts:
             self.sample_counts[sample] = 1
         else:
             self.sample_counts[sample] += 1
 
-        record.id = "sample={};{}".format(sample, self.sample_counts[sample])
-        record.description = ''
-        return record
+        return '{}\t{}\n'.format(record.id, sample)
 
     def recognized_record(self, record):
         '''does this record have a barcode in our barcode map?'''
-        barcode_read = self.parse_barcode(record.id)
+        barcode_read = str(record.seq)
 
         if barcode_read in self.adhoc_barcode_map:
             return True
@@ -71,27 +68,6 @@ class MappedRecords():
             # this code isn't similar enough to any known code. throw it away.
             self.bad_barcodes[barcode_read] = 0
             return False
-
-    @staticmethod
-    def parse_barcode(record_id):
-        '''
-        Extract the barcode read and direction from a BioPython SeqRecord
-        
-        Parameters
-        record_id : str
-            fastq SeqRecord id
-        
-        returns : string
-            barcode read
-        '''
-        
-        # match, e.g. @any_set_of_chars#ACGT/1 -> ACGT
-        m = re.match(".*#([ACGTN]+)/[12]$", record_id)
-
-        if m is None:
-            raise RuntimeError("fastq id did not match expected format: %s" %(record_id))
-
-        return m.group(1)
 
     @staticmethod
     def hamming_distance(x, y):
@@ -117,4 +93,5 @@ class BarcodeMapper:
         self.barcode_map = {str(record.seq): record.id for record in self.barcode_fasta}
 
         # get a set of reads
-        SeqIO.write(MappedRecords(self.barcode_map, self.fastx_records, self.max_diffs), self.output, self.filetype)
+        for pair in MappedRecords(self.barcode_map, self.fastx_records, self.max_diffs):
+            self.output.write(pair)
