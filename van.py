@@ -68,11 +68,19 @@ def parse_args(args=None):
     p.set_defaults(filetype='fasta')
     p.set_defaults(func=barcodes.BarcodeMapper)
 
-    p = subparser('intersect', help='intersect mapping file and fastq')
+    p = subparser('intersect2', help='intersect mapping file and fastq')
     p.add_argument('mapping', type=argparse.FileType('r'), help='tsv from demultiplex')
-    p.add_argument('fastq', help='input fastq')
+    p.add_argument('forward', type=argparse.FileType('r'), help='forward reads fastq')
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output fastq')
-    p.set_defaults(func=intersect.Intersecter)
+    p.set_defaults(func=intersect.intersect2)
+
+    p = subparser('intersect3', help='intersect mapping file, forward fastq, and reverse fastq')
+    p.add_argument('mapping', type=argparse.FileType('r'), help='tsv from demultiplex')
+    p.add_argument('forward', type=argparse.FileType('r'), help='forward input fastq')
+    p.add_argument('reverse', type=argparse.FileType('r'), help='reverse input fastq')
+    p.add_argument('forward_output', type=argparse.FileType('w'), help='forward output fastq')
+    p.add_argument('reverse_output', type=argparse.FileType('w'), help='reverse output fastq')
+    p.set_defaults(func=intersect.intersect3)
 
     p = subparser('derep', help='find unique sequences (and write index file)')
     p.add_argument('fasta', help='input fasta')
