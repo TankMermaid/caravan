@@ -14,6 +14,7 @@ Caravan is a fork of SmileTrain that I made in order to
 ## Suggested workflow for paired-end reads
 Newer versions of caravan use the new three file Illumina format: forward reads in one
 fastq, reverse reads in a second, and the index reads (aka "barcode reads") in a third.
+
 1.  Rename the reads in the forward and reverse fastq's (using `tools/rename\_fastq.pl`).
 2.  Trim primers from the forward and reverse fastq's (using `van.py trim`).
 3.  Demultiplex the index reads (using `van.py demultiplex\_fastq`). 
