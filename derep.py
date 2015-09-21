@@ -56,7 +56,11 @@ class Dereplicator():
         provenances = {}
         for record in SeqIO.parse(fasta, 'fasta'):
             seq = str(record.seq)
-            m = re.search('(sample=([^;]+)[;$])', record.id)
+            m = re.search('sample=([^;#]+)', record.id)
+
+            if m is None:
+                raise RuntimeError("failed to parse record id '{}' for a sample name".format(record.id))
+
             sample = m.group(1)
 
             if seq not in counts:
