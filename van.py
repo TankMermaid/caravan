@@ -23,11 +23,6 @@ def parse_args(args=None):
     def subparser(name, **kwargs):
         return subparsers.add_parser(name, formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
 
-    p = subparser('split', help='split fastx into chunks based on size')
-    p.add_argument('fastx', help='file to be split')
-    p.add_argument('--size', '-s', help='size for each output chunk', default='1.0Gb')
-    p.set_defaults(func=split.FastxSplitter)
-
     p = subparser('merge', help='merge forward and reverse reads')
     p.add_argument('forward', help='forward fastq')
     p.add_argument('reverse', help='reverse fastq')
