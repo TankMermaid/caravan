@@ -1,5 +1,5 @@
 '''
-Intersect a mapping file
+Intersect a mapping file with one (or two) fastq's
 '''
 
 from Bio import SeqIO
@@ -59,7 +59,7 @@ class Intersect3:
         return self
 
     def get_next_map(self):
-        self.map_id, self.sample = next(self.mapping).split("\t")
+        self.map_id, self.sample = next(self.mapping).rstrip().split("\t")
         self.map_num = extract_number(self.map_id)
 
     def get_next_for_entry(self):
