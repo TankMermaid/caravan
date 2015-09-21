@@ -1,17 +1,5 @@
 '''
-remove primers from a fastq using the trim file
-
-trim files have lines like...
-
-for forward primers only:
-read_id start_idx end_idx
-
-for reverse primers too:
-read_id primer_id strand start_idx end_idx
-
-this script looks through the fastq and the trim file and either
-trims the fastq sequence (or throws it out if not all the primers
-hit)
+remove primers from a fastq
 '''
 
 from Bio import SeqRecord, SeqIO, Seq
