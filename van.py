@@ -5,7 +5,7 @@ command-line interface
 '''
 
 import argparse, sys
-import split, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect
+import split, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter
 
 def parse_args(args=None):
     '''
@@ -47,10 +47,9 @@ def parse_args(args=None):
 
     p = subparser('filter', help='remove low-quality reads')
     p.add_argument('fastq', help='input fastq')
-    p.add_argument('--truncqual', '-q', default=2, type=int, help='truncate the read at the first position having quality score <= N, so that all remaining Q scores are >N')
     p.add_argument('--maxee', '-e', default=2.0, type=float, help='discard reads with > E expected errors')
     p.add_argument('--output', '-o', default='out.fa', help='output filtered fasta')
-    p.set_defaults(func=usearch.Usearcher().filter)
+    p.set_defaults(func=qfilter.qfilter)
 
     p = subparser('demultiplex_fastq', help='assign reads to samples using index reads')
     p.add_argument('barcode_fasta')
