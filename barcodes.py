@@ -76,14 +76,14 @@ class MappedRecords():
 
 
 class BarcodeMapper:
-    def __init__(self, barcode_fasta, fastx, max_diffs, output, filetype, run=True):
-        '''filetype is 'fasta' or 'fastq' '''
+    def __init__(self, barcode_fasta, fastx, max_diffs, output, input_format, run=True):
+        '''input_format is 'fasta' or 'fastq' '''
 
         self.barcode_fasta = SeqIO.parse(barcode_fasta, 'fasta')
-        self.fastx_records = SeqIO.parse(fastx, filetype)
+        self.fastx_records = SeqIO.parse(fastx, input_format)
         self.max_diffs = max_diffs
         self.output = output
-        self.filetype = filetype
+        self.input_format = input_format
 
         if run:
             self.run()
