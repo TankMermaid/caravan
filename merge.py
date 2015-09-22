@@ -50,26 +50,41 @@ def merged_at(x, y, overlap):
     new_record.description = ''
     return new_record
 
-def merge_consensus(x, y):
-    new_seq = ""
-    new_qual = []
-    for b1, b2, q1, q2 in zip(x.seq, y.seq, x.letter_annotations['phred_quality'], y.letter_annotations['phred_quality']):
-        p1 = 10.0 ** (-q1 / 10.0)
-        p2 = 10.0 ** (-q2 / 10.0)
+def q_to_prob(q):
+    return 10.0 ** (-float(q) / 10.0)
 
-        if b1 == b2:
-            new_p = (p1 * p2 / 3.0) / (1.0 - p1 - p2 + 4.0 / 3.0 * p1 * p2)
+def same_base_prob(q1, q2):
+    p1 = q_to_prob(q1)
+    p2 = q_to_prob(q2)
+    new_p = (p1 * p2 / 3.0) / (1.0 - p1 - p2 + 4.0 / 3.0 * p1 * p2)
+    return prob_to_q(new_p)
+
+def diff_base_prob(q1, q2):
+    assert(q1 >= q2)
+    p1 = q_to_prob(q1)
+    p2 = q_to_prob(q2)
+    new_p = p1 * (1.0 - p2 / 3.0) / (p1 + p2 - 4.0 / 3.0 * p1 * p2)
+    return prob_to_q(new_p)
+
+def prob_to_q(p):
+    return min([41, math.floor(-10.0 * math.log10(p))])
+
+def consensus_one_base_quality(b1, b2, q1, q2):
+    if b1 == b2:
+        return (b1, same_base_prob(q1, q2))
+    else:
+        if q1 >= q2:
+            return(b1, diff_base_prob(q1, q2))
         else:
-            # swap if they are not "in order"
-            if q1 < q2:
-                b1, b2 = b2, b1
-                p1, p2 = p2, p1
-            
-            new_p = p1 * (1.0 - p2 / 3.0) / (p1 + p2 - 4.0 / 3.0 * p1 * p2)
+            return(b2, diff_base_prob(q2, q1))
 
-        new_seq += b1
-        new_q = min([41, math.floor(-10.0 * math.log10(new_p))])
-        new_qual.append(new_q)
+def consensus_base_quality(seq1, seq2, quals1, quals2):
+    each_base = zip(seq1, seq2, quals1, quals2)
+    each_merged_base = [consensus_one_base_quality(*base) for base in each_base]
+    new_seq, new_qual = zip(*each_merged_base)
+    return "".join(new_seq), list(new_qual)
 
+def merge_consensus(x, y):
+    new_seq, new_qual = consensus_base_quality(str(x.seq), str(y.seq), x.letter_annotations['phred_quality'], y.letter_annotations['phred_quality'])
     new_record = SeqRecord.SeqRecord(seq=Seq.Seq(new_seq), letter_annotations={'phred_quality': new_qual}, description='')
     return new_record
