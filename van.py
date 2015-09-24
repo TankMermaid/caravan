@@ -5,7 +5,7 @@ command-line interface
 '''
 
 import argparse, sys
-import split, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter
+import split, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter, merge
 
 def parse_args(args=None):
     '''
@@ -26,11 +26,11 @@ def parse_args(args=None):
     p = subparser('merge', help='merge forward and reverse reads')
     p.add_argument('forward', help='forward fastq')
     p.add_argument('reverse', help='reverse fastq')
-    p.add_argument('--truncqual', '-q', default=2, type=int, help='truncate the forward and reverse reads at the first Q<=q')
-    p.add_argument('--output', '-o', default='merge.fq', help='merged fastq')
+    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='merged fastq')
+    p.add_argument('--max_diffs', '-m', default=2, type=int, help='maximum mismatches allowed in alignment')
     p.add_argument('--size', '-s', type=int, default=None, help='intended product size? will trash merges that don\'t fit')
     p.add_argument('--size_var', '-v', type=int, default=0, help='allowed variance in product size?')
-    p.set_defaults(func=usearch.Usearcher().merge)
+    p.set_defaults(func=merge.merge)
 
     p = subparser('trim', help='remove primer')
     p.add_argument('primer')
