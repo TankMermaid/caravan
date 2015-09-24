@@ -5,7 +5,7 @@ command-line interface
 '''
 
 import argparse, sys
-import split, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter, merge
+import primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter, merge
 
 def parse_args(args=None):
     '''
