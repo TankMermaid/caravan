@@ -23,15 +23,6 @@ def parse_args(args=None):
     def subparser(name, **kwargs):
         return subparsers.add_parser(name, formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
 
-    p = subparser('merge', help='merge forward and reverse reads')
-    p.add_argument('forward', help='forward fastq')
-    p.add_argument('reverse', help='reverse fastq')
-    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='merged fastq')
-    p.add_argument('--max_diffs', '-m', default=2, type=int, help='maximum mismatches allowed in alignment')
-    p.add_argument('--size', '-s', type=int, default=None, help='intended product size? will trash merges that don\'t fit')
-    p.add_argument('--size_var', '-v', type=int, default=0, help='allowed variance in product size?')
-    p.set_defaults(func=merge.merge)
-
     p = subparser('trim', help='remove primer')
     p.add_argument('primer')
     p.add_argument('fastq')
@@ -40,17 +31,10 @@ def parse_args(args=None):
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'))
     p.set_defaults(func=primers.PrimerRemover)
 
-    p = subparser('filter', help='remove low-quality reads')
-    p.add_argument('fastq', help='input fastq')
-    p.add_argument('--maxee', '-e', default=2.0, type=float, help='discard reads with > E expected errors')
-    p.add_argument('--output', '-o', default=sys.stdout, help='output filtered fasta')
-    p.add_argument('--output_format', '-t', choices=['fasta', 'fastq'], default='fasta')
-    p.set_defaults(func=qfilter.qfilter)
-
     p = subparser('demultiplex', help='assign reads to samples using index reads')
     p.add_argument('barcode_fasta')
     p.add_argument('fastx', help='input fastq (or fasta)')
-    p.add_argument('--max_diffs', '-m', type=int, default=1, help='number of barcode mismatches allowed')
+    p.add_argument('--max_diffs', '-d', type=int, default=1, help='number of barcode mismatches allowed')
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output tsv')
     p.add_argument('--input_format', '-t', choices=['fasta', 'fastq'], default='fastq')
     p.set_defaults(func=barcodes.BarcodeMapper)
@@ -68,6 +52,22 @@ def parse_args(args=None):
     p.add_argument('forward_output', type=argparse.FileType('w'), help='forward output fastq')
     p.add_argument('reverse_output', type=argparse.FileType('w'), help='reverse output fastq')
     p.set_defaults(func=intersect.intersect3)
+
+    p = subparser('merge', help='merge forward and reverse reads')
+    p.add_argument('forward', help='forward fastq')
+    p.add_argument('reverse', help='reverse fastq')
+    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='merged fastq')
+    p.add_argument('--max_diffs', '-d', default=2, type=int, help='maximum mismatches allowed in alignment')
+    p.add_argument('--size', '-s', type=int, default=253, help='intended product size? will trash merges that don\'t fit')
+    p.add_argument('--size_var', '-v', type=int, default=5, help='allowed variance in product size?')
+    p.set_defaults(func=merge.merge)
+
+    p = subparser('filter', help='remove low-quality reads')
+    p.add_argument('fastq', help='input fastq')
+    p.add_argument('--maxee', '-e', default=2.0, type=float, help='discard reads with > E expected errors')
+    p.add_argument('--output', '-o', default=sys.stdout, help='output filtered fasta')
+    p.add_argument('--output_format', '-t', choices=['fasta', 'fastq'], default='fasta')
+    p.set_defaults(func=qfilter.qfilter)
 
     p = subparser('derep', help='find unique sequences (and write index file)')
     p.add_argument('fasta', help='input fasta')
