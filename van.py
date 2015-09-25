@@ -36,7 +36,7 @@ def parse_args(args=None):
     p.add_argument('fastx', help='input fastq (or fasta)')
     p.add_argument('--max_diffs', '-d', type=int, default=1, help='number of barcode mismatches allowed')
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output tsv')
-    p.add_argument('--input_format', '-t', choices=['fasta', 'fastq'], default='fastq')
+    p.add_argument('--input_format', '-i', choices=['fasta', 'fastq'], default='fastq')
     p.set_defaults(func=barcodes.BarcodeMapper)
 
     p = subparser('intersect2', help='intersect mapping file and fastq')
