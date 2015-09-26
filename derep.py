@@ -17,33 +17,37 @@ from Bio import SeqIO, SeqRecord, Seq
 import util
 
 class Dereplicator():
-    def __init__(self, fasta, min_counts, output, index=None, run=True):
+    def __init__(self, fastx, min_counts, output, input_format, index=None, run=True):
         '''
-        fasta : fasta filename or handle
-            input fasta
+        fastx : filename or handle
+            input fastx
         min_counts : int
             minimum number of counts to be included in output
         output : filehandle or filename
             output dereplicated fasta
+        input_format : str
+            'fastq' or 'fasta'
         index : filehandle
             output index file
         '''
         
-        self.fasta = fasta
+        self.fastx = fastx
         self.min_counts = min_counts
         self.output = output
+        self.input_format = input_format
         self.index = index
 
         if run:
             self.run()
         
     def run(self):
-        self.counts, self.provenances = self.dereplicate(self.fasta)
+        self.records = SeqIO.parse(self.fastx, self.input_format)
+        self.counts, self.provenances = self.dereplicate(self.records)
 
         self.write_output(self.counts, self.output, self.provenances, self.index, self.min_counts)
         
     @staticmethod
-    def dereplicate(fasta):
+    def dereplicate(records):
         '''
         Process the input fasta entries.
 
@@ -54,7 +58,7 @@ class Dereplicator():
         
         counts = {}
         provenances = {}
-        for record in SeqIO.parse(fasta, 'fasta'):
+        for record in records:
             seq = str(record.seq)
             m = re.search('sample=([^;#]+)', record.id)
 
@@ -86,6 +90,9 @@ class Dereplicator():
 
         # get the seqs in abundance order
         seqs_sizes = sorted(counts.items(), key=itemgetter(1), reverse=True)
+
+        if len(seqs_sizes) == 0:
+            raise RuntimeError("found 0 records in the input")
 
         # rename the sequences to use padded sizes
         n_digits = math.ceil(math.log10(len(seqs_sizes)))
