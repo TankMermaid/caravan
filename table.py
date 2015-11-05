@@ -87,7 +87,7 @@ class Tabler:
     @classmethod
     def otu_tables(cls, provenances, memberships, output_ext, samples=None, rename=False):
         # check that all the output locations are OK first
-        base_output_names = [os.path.splitext(m)[0] for m in memberships]
+        base_output_names = [os.path.splitext(os.path.basename(m))[0] for m in memberships]
         output_names = [base + '.' + output_ext for base in base_output_names]
         existing_files = [fn for fn in output_names if os.path.exists(fn)]
         if len(existing_files) > 0:
@@ -103,7 +103,7 @@ class Tabler:
                 membership_dict = yaml.load(f)
 
             with open(output_fn, 'w') as f:
-                cls.table(membership_dict, provenances_dict, output_fn, samples, rename)
+                cls.table(membership_dict, provenances_dict, f, samples, rename)
 
     @classmethod
     def seq_table(cls, provenances, output, samples=None, rename=False):
