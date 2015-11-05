@@ -4,8 +4,8 @@ parse fixrank files output by classifier.jar
 
 import csv, re, itertools, yaml
 
-rank_abbreviations = ['r', 'k', 'p', 'c', 'o', 'f', 'g']
-rank_abbr_map = {'r': 'rootrank', 'k': 'domain', 'p': 'phylum', 'c': 'class', 'o': 'order', 'f': 'family', 'g': 'genus'}
+rank_abbreviations = ['k', 'p', 'c', 'o', 'f', 'g']
+rank_abbr_map = {'k': 'domain', 'p': 'phylum', 'c': 'class', 'o': 'order', 'f': 'family', 'g': 'genus'}
 
 class FixrankRank:
     def __init__(self, name, taxon, confidence):
