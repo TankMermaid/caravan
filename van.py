@@ -123,12 +123,20 @@ def parse_args(args=None):
     p.set_defaults(func=parse.Parser.map_to_yaml)
 
     p = subparser('otu_table', help='make OTU table from membership and provenances yamls')
-    p.add_argument('membership', help='yaml mapping sequence => otu')
     p.add_argument('provenances', help='yaml mapping sequence => {sample => counts}')
+    p.add_argument('membership', help='yaml mapping sequence => otu')
     p.add_argument('--samples', '-s', help='filename of newline separated sample names in order')
     p.add_argument('--rename', '-r', action='store_true', help='use a two-column sample list to rename them?')
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output otu table')
     p.set_defaults(func=table.Tabler.otu_table)
+
+    p = subparser('otu_tables', help='make multiple OTU tables')
+    p.add_argument('provenances', help='yaml mapping sequence => {sample => counts}')
+    p.add_argument('memberships', help='yaml files, each mapping sequence => otu', nargs='+')
+    p.add_argument('--samples', '-s', help='filename of newline separated sample names in order')
+    p.add_argument('--rename', '-r', action='store_true', help='use a two-column sample list to rename them?')
+    p.add_argument('--output_ext', '-o', default='counts', help='output filename extension')
+    p.set_defaults(func=table.Tabler.otu_tables)
 
     p = subparser('seq_table', help='make OTU table from provenances yaml')
     p.add_argument('provenances', help='yaml mapping sequence => {sample => counts}')
