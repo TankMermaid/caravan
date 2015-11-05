@@ -8,9 +8,11 @@ rank_abbreviations = ['k', 'p', 'c', 'o', 'f', 'g']
 rank_abbr_map = {'k': 'domain', 'p': 'phylum', 'c': 'class', 'o': 'order', 'f': 'family', 'g': 'genus'}
 
 class FixrankRank:
+    taxon_table = str.maketrans(' ', '_', '"')  # change space to underscore; remove quotes
+
     def __init__(self, name, taxon, confidence):
         self.name = name
-        self.taxon = re.sub('"', '', taxon)
+        self.taxon = taxon.translate(self.taxon_table)
         self.confidence = float(confidence)
 
     def __eq__(self, other):
