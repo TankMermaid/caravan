@@ -11,37 +11,37 @@ class Parser:
 
         # parse the first line differently from the rest
         first_line = next(usearch)
-        n_fields = len(first_line.split())
+        fields = first_line.rstrip().split()
+        n_fields = len(fields)
 
         if n_fields == 5:
             cls.uparse_to_yaml(first_line, usearch, output)
         elif n_fields == 12:
             cls.blast6_to_yaml(first_line, usearch, output)
         else:
-            raise RuntimeError("mapping file with {} columsn not recognized as blast6 or uparse".format(n_fields))
+            raise RuntimeError("mapping file with {} columns not recognized as blast6 or uparse: {}".format(n_fields, fields))
 
     @staticmethod
     def uparse_to_yaml(first_line, usearch, output):
-        write_out = lambda seq, otu: output.write("{}: {}\n".format(seq, otu))
-
-        # for the first line, the 5th field is the otu name
-        fields = first_line.rstrip().split('\t')
-        seq = util.strip_fasta_label(fields[0])
-        assert(fields[1] == 'otu')
-        otu = fields[4]
-        write_out(seq, otu)
-
-        for line in usearch:
+        def process_line(line):
             fields = line.rstrip().split('\t')
             seq = util.strip_fasta_label(fields[0])
             hit_type = fields[1]
 
-            if hit_type == 'otu':
+            if hit_type == 'otu' and fields[2] == '*':
+                otu = fields[4]
+            elif hit_type == 'otu' and fields[2] != '*':
                 otu = fields[5]
-                write_out(seq, otu)
             elif hit_type == 'match':
                 otu = fields[4]
-                write_out(seq, otu)
+
+            if hit_type != 'chimera':
+                output.write("{}: {}\n".format(seq, otu))
+
+        process_line(first_line)
+
+        for line in usearch:
+            process_line(line)
 
     @staticmethod
     def blast6_to_yaml(first_line, usearch, output, no_hit="*", save_no_hit=True):
