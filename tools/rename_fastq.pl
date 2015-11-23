@@ -7,9 +7,12 @@ use 5.10.1;
 my $i = 1;
 
 while (<>) {
-  if ($. % 4 == 1) {
+  my $pos = $. % 4;
+  if ($pos == 1) {
     say "\@read$i";
     $i++;
+  } elsif ($pos == 3) {
+    say "+";
   } else {
     print;
   }
