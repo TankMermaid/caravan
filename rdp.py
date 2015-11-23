@@ -171,19 +171,21 @@ class FixrankParser:
     @classmethod
     def parse_lines_all_ranks(cls, lines, min_confidence=None):
         '''turn lines into {'k' => {seq id => lineage}, 'p' => ...}'''
-
         mappings = {abbr: {} for abbr in rank_abbreviations}
         for line in lines:
-            sid, lineage = cls.parse_line(line.rstrip())
-            lineage.standardize()
+                res = cls.parse_line(line.rstrip())
 
-            if min_confidence is not None:
-                lineage.trim_at_confidence(min_confidence)
+                if res is not None:
+                    sid, lineage = res
+                    lineage.standardize()
 
-            for abbr in rank_abbreviations:
-                rank = rank_abbr_map[abbr]
-                trimmed_lin = lineage.lineage_at_rank(rank)
-                mappings[abbr][sid] = str(trimmed_lin)
+                    if min_confidence is not None:
+                        lineage.trim_at_confidence(min_confidence)
+
+                    for abbr in rank_abbreviations:
+                        rank = rank_abbr_map[abbr]
+                        trimmed_lin = lineage.lineage_at_rank(rank)
+                        mappings[abbr][sid] = str(trimmed_lin)
 
         return mappings
 
