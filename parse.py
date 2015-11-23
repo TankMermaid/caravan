@@ -44,7 +44,7 @@ class Parser:
             process_line(line)
 
     @staticmethod
-    def blast6_to_yaml(first_line, usearch, output, no_hit="*", save_no_hit=True):
+    def blast6_to_yaml(first_line, usearch, output, no_hit="*", save_no_hit=False):
         def parse_line(line):
             fields = line.rstrip().split('\t')
             query = util.strip_fasta_label(fields[0])
@@ -55,8 +55,10 @@ class Parser:
 
         def process_line(line):
             query, target = parse_line(line)
-            if target != no_hit or save_no_hit:
+            if target != no_hit:
                 write_out(query, target)
+            elif target == no_hit and save_no_hit:
+                write_out(query, 'no_hit')
 
         process_line(first_line)
         for line in usearch:
