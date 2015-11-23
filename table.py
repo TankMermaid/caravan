@@ -6,7 +6,7 @@ Create OTU tables using information from
     * a provenances .yml that has a hash sequence => {sample => counts}
 '''
 
-import re, sys, argparse, yaml, warnings
+import re, sys, argparse, yaml, warnings, os.path
 from operator import itemgetter
 
 class Tabler:
@@ -83,6 +83,27 @@ class Tabler:
             membership_dict = yaml.load(f)
 
         cls.table(membership_dict, provenances_dict, output, samples, rename)
+
+    @classmethod
+    def otu_tables(cls, provenances, memberships, output_ext, samples=None, rename=False):
+        # check that all the output locations are OK first
+        base_output_names = [os.path.splitext(os.path.basename(m))[0] for m in memberships]
+        output_names = [base + '.' + output_ext for base in base_output_names]
+        existing_files = [fn for fn in output_names if os.path.exists(fn)]
+        if len(existing_files) > 0:
+            raise RuntimeError('some output files would be overwritten: {}'.format(existing_files))
+
+        # load in the provenances
+        with open(provenances) as f:
+            provenances_dict = yaml.load(f)
+
+        # load each membership file and do its output
+        for membership, output_fn in zip(memberships, output_names):
+            with open(membership) as f:
+                membership_dict = yaml.load(f)
+
+            with open(output_fn, 'w') as f:
+                cls.table(membership_dict, provenances_dict, f, samples, rename)
 
     @classmethod
     def seq_table(cls, provenances, output, samples=None, rename=False):

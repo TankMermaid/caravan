@@ -8,9 +8,11 @@ rank_abbreviations = ['k', 'p', 'c', 'o', 'f', 'g']
 rank_abbr_map = {'k': 'domain', 'p': 'phylum', 'c': 'class', 'o': 'order', 'f': 'family', 'g': 'genus'}
 
 class FixrankRank:
+    taxon_table = str.maketrans(' ', '_', '"')  # change space to underscore; remove quotes
+
     def __init__(self, name, taxon, confidence):
         self.name = name
-        self.taxon = re.sub('"', '', taxon)
+        self.taxon = taxon.translate(self.taxon_table)
         self.confidence = float(confidence)
 
     def __eq__(self, other):
@@ -24,7 +26,7 @@ class FixrankRank:
 
 
 class FixrankLineage:
-    standard_rank_names = ['domain', 'phylum', 'class', 'order', 'family', 'genus']
+    standard_rank_names = ['rootrank', 'domain', 'phylum', 'class', 'order', 'family', 'genus']
 
     def __init__(self, ranks, standardize=False, min_confidence=None):
         self.ranks = ranks
@@ -127,7 +129,7 @@ class FixrankParser:
         # the first entry should be root, whatever that is
         assert ranks[0] == FixrankRank('rootrank', 'Root', 1.0)
 
-        return sid_entry, FixrankLineage(ranks[1:])
+        return sid_entry, FixrankLineage(ranks)
 
     @classmethod
     def parse_line(cls, line):
