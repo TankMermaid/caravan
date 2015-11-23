@@ -1,63 +1,63 @@
 '''
-class for parsing blast6 files
+class for parsing blast6 and uparse files
 '''
 
 import util, yaml
 
 class Parser:
-    @staticmethod
-    def b6_to_dict(b6, no_hit="*", save_no_hit=True):
-        '''from a blast6 mapping file, make a dict {query => target}'''
-
-        membership = {}
-        with open(b6) as f:
-            for line in f:
-                fields = line.split()
-                query = util.strip_fasta_label(fields[0])
-                target = fields[1]
-
-                if target != no_hit or save_no_hit:
-                    membership[query] = target
-
-        return membership
-
-    @staticmethod
-    def up_to_dict(up, keep_chimera=False):
-        '''from a uparse mapping file, make a dict {seq => otu}'''
-
-        membership = {}
-        with open(up) as f:
-            for line in f:
-                fields = line.split()
-                seq = util.strip_fasta_label(fields[0])
-                hit_type = fields[1]
-                otu = fields[4]
-
-                if hit_type == 'chimera':
-                    if keep_chimera:
-                        otu = 'chimera'
-                    else:
-                        # ignore this entry
-                        continue
-
-                membership[seq] = otu
-
-        return membership
-
     @classmethod
-    def map_to_yaml(cls, map_fn, yaml_fn):
-        with open(map_fn) as f:
-            line = f.readline()
+    def usearch_to_yaml(cls, usearch, output):
+        '''convert uparse or blast6 to yaml'''
 
-        # count the number of fields
-        n_fields = len(line.split())
+        # parse the first line differently from the rest
+        first_line = next(usearch)
+        n_fields = len(first_line.split())
 
         if n_fields == 5:
-            d = cls.up_to_dict(map_fn)
+            cls.uparse_to_yaml(first_line, usearch, output)
         elif n_fields == 12:
-            d = cls.b6_to_dict(map_fn)
+            cls.blast6_to_yaml(first_line, usearch, output)
         else:
             raise RuntimeError("mapping file with {} columsn not recognized as blast6 or uparse".format(n_fields))
 
-        with open(yml_fn, 'w') as f:
-            yaml.dump(d, f, default_flow_style=False)
+    @staticmethod
+    def uparse_to_yaml(first_line, usearch, output):
+        write_out = lambda seq, otu: output.write("{}: {}\n".format(seq, otu))
+
+        # for the first line, the 5th field is the otu name
+        fields = first_line.rstrip().split('\t')
+        seq = util.strip_fasta_label(fields[0])
+        assert(fields[1] == 'otu')
+        otu = fields[4]
+        write_out(seq, otu)
+
+        for line in usearch:
+            fields = line.rstrip().split('\t')
+            seq = util.strip_fasta_label(fields[0])
+            hit_type = fields[1]
+
+            if hit_type == 'otu':
+                otu = fields[5]
+                write_out(seq, otu)
+            elif hit_type == 'match':
+                otu = fields[4]
+                write_out(seq, otu)
+
+    @staticmethod
+    def blast6_to_yaml(first_line, usearch, output, no_hit="*", save_no_hit=True):
+        def parse_line(line):
+            fields = line.rstrip().split('\t')
+            query = util.strip_fasta_label(fields[0])
+            target = fields[1]
+            return query, target
+
+        write_out = lambda query, target: output.write("{}: {}\n".format(query, target))
+
+        def process_line(line):
+            query, target = parse_line(line)
+            if target != no_hit or save_no_hit:
+                write_out(query, target)
+
+        process_line(first_line)
+        for line in usearch:
+            process_line(line)

@@ -118,9 +118,9 @@ def parse_args(args=None):
     p.set_defaults(func=usearch.Usearcher().utax)
 
     p = subparser('parse', help='parse a blast6 or uparse mapping file to yaml membership file')
-    p.add_argument('map_fn')
-    p.add_argument('yaml_fn')
-    p.set_defaults(func=parse.Parser.map_to_yaml)
+    p.add_argument('usearch', type=argparse.FileType('r'), help='blast6 or uparse file')
+    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output yaml')
+    p.set_defaults(func=parse.Parser.usearch_to_yaml)
 
     p = subparser('otu_table', help='make OTU table from membership and provenances yamls')
     p.add_argument('provenances', help='yaml mapping sequence => {sample => counts}')
