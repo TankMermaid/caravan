@@ -135,7 +135,15 @@ class FixrankParser:
     def parse_line(cls, line):
         '''parse a line into seq id and lineage'''
         entries = line.rstrip().split("\t")
-        return cls.parse_entries(entries)
+
+        # if the second entry is a dash (rather than blank), RDP used the reverse complement
+        # to do the classification, which is probably a bad sign, so throw out that seq
+        if entries[1] == '':
+            return cls.parse_entries(entries)
+        elif entries[1] == '-':
+            return None
+        else:
+            raise RuntimeError("don't recognize field 2 '{}' in fixrank line: '{}'".format(entries[1], line))
 
     @classmethod
     def parse_lines(cls, lines, min_confidence=None, rank=None):
@@ -143,16 +151,20 @@ class FixrankParser:
 
         mapping = {}
         for line in lines:
-            sid, lineage = cls.parse_line(line.rstrip())
-            lineage.standardize()
+            res = cls.parse_line(line.rstrip())
 
-            if min_confidence is not None:
-                lineage.trim_at_confidence(min_confidence)
+            # parse_line gives none if RDP used reverse complement
+            if res is not None:
+                sid, lineage = res
+                lineage.standardize()
 
-            if rank is not None:
-                lineage.trim_at_rank(rank)
+                if min_confidence is not None:
+                    lineage.trim_at_confidence(min_confidence)
 
-            mapping[sid] = str(lineage)
+                if rank is not None:
+                    lineage.trim_at_rank(rank)
+
+                mapping[sid] = str(lineage)
 
         return mapping
 
