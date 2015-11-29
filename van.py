@@ -5,7 +5,7 @@ command-line interface
 '''
 
 import argparse, sys
-import primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter, merge
+import convert, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter, merge
 
 def parse_args(args=None):
     '''
@@ -22,6 +22,14 @@ def parse_args(args=None):
 
     def subparser(name, **kwargs):
         return subparsers.add_parser(name, formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
+
+    p = subparser('convert', help='convert raw fastqs')
+    p.add_argument('fastq')
+    p.add_argument('--quality', '-q', action='store_true', help='convert quality scores?')
+    p.add_argument('--index', '-i', default=None, type=argparse.FileType('w'), help='extract index reads to fasta?')
+    p.add_argument('--rename', '-r', action='store_true', help='rename reads sequentially?')
+    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output fastq')
+    p.set_defaults(func=convert.convert_fastq)
 
     p = subparser('trim', help='remove primer')
     p.add_argument('primer')
