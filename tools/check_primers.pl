@@ -3,11 +3,17 @@
 use warnings;
 use strict;
 use 5.10.1;
+use Getopt::Long;
+use Pod::Usage;
 
-if (grep($_ eq "-h" || $_ eq "--help", @ARGV)) {
-	say "usage: check_primers.pl primer fastq";
-	exit;
-}
+my $max_entries = 0;
+my $help = 0;
+
+GetOptions("n=i" => \$max_entries
+    , 'help' => \$help)
+    or pod2usage(2);
+
+pod2usage(2) if $help;
 
 my $primer = shift @ARGV;
 
@@ -26,8 +32,29 @@ while (<>) {
 	next unless $. % 4 == 2;
 	$matches += 1 if /${regex}/;
 	$entries += 1;
+	last if $max_entries > 0 and $entries >= $max_entries;
 }
 
 say "of $entries entries, $matches match the primer $primer (aka regex $regex)"
 
 __END__
+
+=head1 NAME
+
+check_primers
+
+=head1 SYNOPSIS
+
+check_primers.pl PRIMER [options] [file]
+
+    Options
+      -help
+      -n    number of entries
+
+=head1 DESCRIPTION
+
+This program will read the input fastqs and see how many have the
+given primer in the given window. Will do regex matching for non-ACGT
+characters.
+
+=cut
