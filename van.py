@@ -94,7 +94,7 @@ def parse_args(args=None):
 
     p = subparser('rdpall', help='make mapping files for all taxonomic levels using RDP fixrank')
     p.add_argument('fixrank', type=argparse.FileType('r'), help='input fixrank from classifier.jar')
-    p.add_argument('--output_base', '-o', default='rdp_X.yml', help='output filename base')
+    p.add_argument('--output_base', '-o', default='rdp_X.yaml', help='output filename base')
     p.add_argument('--repl', '-I', default='X', help='pattern in output base to replace with rank-letter')
     p.add_argument('--min_conf', '-m', type=float, default=0.8, help='minimum confidence to assign rank')
     p.set_defaults(func=rdp.FixrankParser.parse_file_all_ranks)
@@ -120,7 +120,7 @@ def parse_args(args=None):
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output tax list')
     p.set_defaults(func=tax.TaxAssigner.assign_b6_with_pickled_tax_dict)
 
-    p = subparser('utax', help='assign taxonomies using utax (and options in utax.yml)')
+    p = subparser('utax', help='assign taxonomies using utax (and options in utax.yaml)')
     p.add_argument('fastx')
     p.add_argument('--output', '-o', default='tax.txt')
     p.set_defaults(func=usearch.Usearcher().utax)

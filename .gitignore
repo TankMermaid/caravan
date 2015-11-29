@@ -55,4 +55,4 @@ coverage.xml
 # Sphinx documentation
 doc/_build/
 
-utax.yml
+utax.yaml

@@ -2,7 +2,7 @@
 class for parsing blast6 and uparse files
 '''
 
-import util, yaml
+import util, yaml, re
 
 class Parser:
     @classmethod
@@ -44,19 +44,22 @@ class Parser:
             process_line(line)
 
     @staticmethod
-    def blast6_to_yaml(first_line, usearch, output, no_hit="*", save_no_hit=True):
-        def parse_line(line):
+    def blast6_to_yaml(first_line, usearch, output, no_hit="*", save_no_hit=False):
+        # check to see if the OTU ids are numbers
+        if re.match("^[\d\.]+$", first_line.rstrip().split('\t')[1]):
+            write_out = lambda query, target: output.write('{}: "{}"\n'.format(query, target))
+        else:
+            write_out = lambda query, target: output.write("{}: {}\n".format(query, target))
+
+        def process_line(line):
             fields = line.rstrip().split('\t')
             query = util.strip_fasta_label(fields[0])
             target = fields[1]
-            return query, target
 
-        write_out = lambda query, target: output.write("{}: {}\n".format(query, target))
-
-        def process_line(line):
-            query, target = parse_line(line)
-            if target != no_hit or save_no_hit:
+            if target != no_hit:
                 write_out(query, target)
+            elif target == no_hit and save_no_hit:
+                write_out(query, 'no_hit')
 
         process_line(first_line)
         for line in usearch:
