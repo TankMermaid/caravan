@@ -7,9 +7,11 @@ use Getopt::Long;
 use Pod::Usage;
 
 my $max_entries = 0;
+my $verbose = 0;
 my $help = 0;
 
 GetOptions("n=i" => \$max_entries
+    , 'verbose' => \$verbose
     , 'help' => \$help)
     or pod2usage(2);
 
@@ -26,16 +28,22 @@ my $check = join '|', keys %code;
 my $regex = $primer;
 $regex =~ s/($check)/$code{$1}/g;
 
+say "searching for primer $primer => regex $regex..." if $verbose;
+
 my $entries = 0;
 my $matches = 0;
+my $average_position = 0.0;
 while (<>) {
 	next unless $. % 4 == 2;
-	$matches += 1 if /${regex}/;
+	if (/${regex}/) {
+      $average_position = ($average_position * $matches + @-) / ($matches + 1);
+      $matches += 1;
+    }
 	$entries += 1;
 	last if $max_entries > 0 and $entries >= $max_entries;
 }
 
-say "of $entries entries, $matches match the primer $primer (aka regex $regex)"
+say "of $entries entries, $matches match the primer (at average position $average_position)"
 
 __END__
 
