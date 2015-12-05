@@ -75,12 +75,21 @@ class Tabler:
 
     @classmethod
     def otu_table(cls, membership, provenances, output, samples=None, rename=False):
-        # get the index
+        with open(membership) as f:
+            membership_dict = yaml.load(f)
+
+        for x in membership_dict.values():
+            if type(x) is not str:
+                raise RuntimeError("membership file {} is not a hash of strings".format(membership))
+
         with open(provenances) as f:
             provenances_dict = yaml.load(f)
 
-        with open(membership) as f:
-            membership_dict = yaml.load(f)
+        for x in provenances_dict.values():
+            if type(x) is not dict:
+                raise RuntimeError("provenances file {} is not a hash of hashes".format(provenances)) 
+            break
+
 
         cls.table(membership_dict, provenances_dict, output, samples, rename)
 
@@ -97,10 +106,16 @@ class Tabler:
         with open(provenances) as f:
             provenances_dict = yaml.load(f)
 
+        if type(provenances_dict.values()[0]) is not dict:
+            raise RuntimeError("provenances file {} is not a hash of hashes".format(provenances)) 
+
         # load each membership file and do its output
         for membership, output_fn in zip(memberships, output_names):
             with open(membership) as f:
                 membership_dict = yaml.load(f)
+
+            if type(membership_dict.values()[0]) is not str:
+                raise RuntimeError("membership file {} is not a hash of strings".format(membership))
 
             with open(output_fn, 'w') as f:
                 cls.table(membership_dict, provenances_dict, f, samples, rename)
