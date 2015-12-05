@@ -3,9 +3,11 @@ Intersect a mapping file with one (or two) fastq's
 '''
 
 from Bio import SeqIO
+import re
 
 def extract_number(header):
-    return int(header.lstrip('read'))
+    m = re.match("read(\d+);?", header)
+    return int(m.groups()[0])
 
 class Intersect2:
     def __init__(self, mapping_lines, fastq_entries):
