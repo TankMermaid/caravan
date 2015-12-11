@@ -71,7 +71,9 @@ class MappedRecords():
 
     @staticmethod
     def hamming_distance(x, y):
-        assert len(x) == len(y)
+        if len(x) != len(y):
+            raise RuntimeError("tried to compare barcodes of two lengths: {} and {}".format(x, y))
+
         return sum(map(operator.ne, x, y))
 
 
