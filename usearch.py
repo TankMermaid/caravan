@@ -62,7 +62,7 @@ class Usearcher:
         if maxee is not None:
             cmd += ['-fastq_maxee', maxee]
 
-        self.run(cmd)
+        return self.run(cmd)
 
     def cluster_denovo(self, fasta, radius, output, index=None, rename=None):
         cmd = ['usearch', '-cluster_otus', fasta, '-otu_radius_pct', radius, '-otus', output]
@@ -73,7 +73,7 @@ class Usearcher:
         if rename is not None:
             cmd += ['-relabel', rename]
 
-        self.run(cmd)
+        return self.run(cmd)
 
     def cluster_smallmem(self, fasta, otuid, centroids=None, uc=None):
         if isinstance(otuid, int):
@@ -87,11 +87,11 @@ class Usearcher:
         if uc is not None:
             cmd += ['-uc', uc]
 
-        self.run(cmd)
+        return self.run(cmd)
 
     def length_sort(self, fasta, output):
         cmd = ['usearch', '-sortbylength', fasta, '-output', output]
-        self.run(cmd)
+        return self.run(cmd)
 
     def chimera_ref(self, fasta, db, fasta_no_chimeras=None, fasta_chimeras=None, strand='plus'):
         cmd = ['usearch', '-uchime_ref', fasta, '-db', db, '-strand', strand]
@@ -102,7 +102,7 @@ class Usearcher:
         if fasta_chimeras is not None:
             cmd += ['-chimeras', fasta_chimeras]
 
-        self.run(cmd)
+        return self.run(cmd)
 
     def chimera_denovo(self, fasta, fasta_no_chimeras=None, fasta_chimeras=None, strand='plus'):
         cmd = ['usearch', '-uchime_denovo', fasta, '-strand', strand]
@@ -113,7 +113,7 @@ class Usearcher:
         if fasta_chimeras is not None:
             cmd += ['-chimeras', fasta_chimeras]
 
-        self.run(cmd)
+        return self.run(cmd)
 
     def search(self, fasta, db, sid, b6, not_matched=None, fasta_pairs=None, strand='both', no_hits=True):
         cmd = ['usearch', '-usearch_global', fasta, '-db', db, '-id', sid, '-strand', strand, '-blast6out', b6]
@@ -122,7 +122,7 @@ class Usearcher:
         if fasta_pairs is not None: cmd += ['-fastapairs', fasta_pairs]
         if no_hits: cmd += ['-output_no_hits']
 
-        self.run(cmd)
+        return self.run(cmd)
 
     def short_search(self, fastx, db, out, max_diffs=1, sid=0.0, strand='plus'):
         '''usearch for short, well-aligned sequences. e.g., for index reads'''
@@ -130,7 +130,7 @@ class Usearcher:
         cmd = ['usearch', '-search_global', fastx, '-db', db, '-strand', strand, '-userout', out, '-id', sid,
             '-fulldp', '-maxdiffs', max_diffs, '-leftjust', '-rightjust', '-userfields', 'query+target']
 
-        self.run(cmd)
+        return self.run(cmd)
 
     def primer_search(self, primers_fasta, fastx, output, max_diffs):
         '''search for oligos like primers'''
@@ -155,7 +155,7 @@ class Usearcher:
         cmd = ['usearch', '-search_oligodb', fastx, '-db', primers_fasta, '-userout', output,
             '-userfields', userfields, '-strand', strand, '-maxdiffs', max_diffs, '-maxhits', 2]
 
-        self.run(cmd)
+        return self.run(cmd)
 
     def pcr_search(self, primers_fasta, fastx, output, max_diffs, strip=True):
         '''search for a pair of oligos'''
@@ -166,7 +166,7 @@ class Usearcher:
         if strip:
             cmd.append('-pcr_strip_primers')
 
-        self.run(cmd)
+        return self.run(cmd)
 
     def utax(self, fastx, output):
         opts_fn = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'utax.yml')
@@ -176,4 +176,4 @@ class Usearcher:
         cmd = ['usearch', '-utax', fastx, '-db', opts['db'], '-taxconfs', opts['tc'], '-tt', opts['tt'],
             '-utaxout', output]
 
-        self.run(cmd)
+        return self.run(cmd)

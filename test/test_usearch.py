@@ -20,3 +20,19 @@ class TestMerge:
         self.expect_out += ['-fastq_minmergelen', '95', '-fastq_maxmergelen', '105']
         out = usearch.Usearcher(debug=True).merge(**self.opts)
         assert out == self.expect_out
+
+class TestDenovo:
+    opts = {'radius': '0.3', 'fasta': 'foo.fa', 'output': 'otu.fa', 'index': 'otu.up'}
+    expect_out = ['usearch', '-cluster_otus', 'foo.fa', '-otu_radius_pct', '0.3', '-otus', 'otu.fa', '-uparseout', 'otu.up']
+
+    def test_correct(self):
+        out = usearch.Usearcher(debug=True).cluster_denovo(**self.opts)
+        assert out == self.expect_out
+
+class TestSearch:
+    opts = {'fasta': 'foo.fa', 'db': 'db.fa', 'sid': '0.9', 'b6': 'bar.b6'}
+    expect_out = ['usearch', '-usearch_global', 'foo.fa', '-db', 'db.fa', '-id', '0.9', '-strand', 'both', '-blast6out', 'bar.b6', '-output_no_hits']
+
+    def test_correct(self):
+        out = usearch.Usearcher(debug=True).search(**self.opts)
+        assert out == self.expect_out
