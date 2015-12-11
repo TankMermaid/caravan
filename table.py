@@ -85,12 +85,12 @@ class Tabler:
         cls.table(membership_dict, provenances_dict, output, samples, rename)
 
     @classmethod
-    def otu_tables(cls, provenances, memberships, output_ext, samples=None, rename=False):
+    def otu_tables(cls, provenances, memberships, output_ext, samples=None, rename=False, force=False):
         # check that all the output locations are OK first
         base_output_names = [os.path.splitext(os.path.basename(m))[0] for m in memberships]
         output_names = [base + '.' + output_ext for base in base_output_names]
         existing_files = [fn for fn in output_names if os.path.exists(fn)]
-        if len(existing_files) > 0:
+        if not force and len(existing_files) > 0:
             raise RuntimeError('some output files would be overwritten: {}'.format(existing_files))
 
         # load in the provenances
