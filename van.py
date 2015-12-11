@@ -102,9 +102,10 @@ def parse_args(args=None):
     p = subparser('denovo', help='cluster de novo with usearch')
     p.add_argument('radius', type=float, help='0.0-100.0, recommended at most 3.0 = 97%% identity')
     p.add_argument('fasta', help='input fasta')
-    p.add_argument('--output', '-o', default='out.fasta', help='representative sequences fasta')
+    p.add_argument('output', help='representative sequences fasta')
     p.add_argument('--index', '-i', default=None, help='uparse file mapping seqs to otus?')
     p.add_argument('--rename', '-r', default='otu', help='rename otus using this prefix')
+    p.add_argument('--force', '-f', action='store_true', help='force a radius above 3.0?')
     p.set_defaults(func=usearch.Usearcher().cluster_denovo)
 
     p = subparser('ref', help='compare a fasta to a reference database')

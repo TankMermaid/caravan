@@ -64,7 +64,19 @@ class Usearcher:
 
         return self.run(cmd)
 
-    def cluster_denovo(self, fasta, radius, output, index=None, rename=None):
+    def cluster_denovo(self, fasta, radius, output, index=None, rename=None, force=False):
+        # give some nice warnings or errors if weird percentages are being used
+        radius = float(radius)
+        if radius > 3.0:
+            message = "usearch doesn't recommend clustering at radius {} (i.e., {}% difference)".format(radius, 100.0 - radius)
+            if force:
+                print("warning: " + message, file=sys.stderr)
+            else:
+                raise RuntimeError(message + "; use -f to force")
+        elif radius < 0.5:
+            message = "warning: your clustering radius {} (i.e., {}% difference) looks small".format(radius, 100.0 - radius)
+            print(message, file=sys.stderr)
+
         cmd = ['usearch', '-cluster_otus', fasta, '-otu_radius_pct', radius, '-otus', output]
 
         if index is not None:
