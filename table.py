@@ -28,6 +28,9 @@ class Tabler:
             if otu not in otu_abunds:
                 otu_abunds[otu] = 0
 
+            if type(provenances[seq]) is not dict:
+                raise RuntimeError("malformed provenances file: sequence '{}' points to a non-dict object".format(seq))
+
             for sample in provenances[seq]:
                 c = provenances[seq][sample]
 
