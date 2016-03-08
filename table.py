@@ -88,11 +88,17 @@ class Tabler:
         cls.table(membership_dict, provenances_dict, output, samples, rename)
 
     @classmethod
-    def otu_tables(cls, provenances, memberships, output_ext, samples=None, rename=False, force=False):
+    def otu_tables(cls, provenances, memberships, output_ext, samples=None, rename=False, seq_table=None, force=False):
         # check that all the output locations are OK first
         base_output_names = [os.path.splitext(os.path.basename(m))[0] for m in memberships]
         output_names = [base + '.' + output_ext for base in base_output_names]
         existing_files = [fn for fn in output_names if os.path.exists(fn)]
+
+        if seq_table is not None:
+            seq_table_output_name = seq_table + '.' + output_ext
+            if os.path.exists(seq_table_output_name):
+                existing_files.append(seq_table_output_name)
+
         if not force and len(existing_files) > 0:
             raise RuntimeError('some output files would be overwritten: {}'.format(existing_files))
 
@@ -107,6 +113,11 @@ class Tabler:
 
             with open(output_fn, 'w') as f:
                 cls.table(membership_dict, provenances_dict, f, samples, rename)
+
+        # make the seq table if called for
+        if seq_table is not None:
+            membership_dict = {seq: seq for seq in provenances_dict}
+            cls.table(membership_dict, provenances_dict, output, samples, rename)
 
     @classmethod
     def seq_table(cls, provenances, output, samples=None, rename=False):
