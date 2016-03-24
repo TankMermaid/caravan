@@ -68,6 +68,7 @@ def parse_args(args=None):
     p.add_argument('--max_diffs', '-d', default=2, type=int, help='maximum mismatches allowed in alignment')
     p.add_argument('--size', '-s', type=int, default=253, help='intended product size? will trash merges that don\'t fit')
     p.add_argument('--size_var', '-v', type=int, default=5, help='allowed variance in product size?')
+    p.add_argument('--stagger', '-g', action='store_true', help='staggered reads?')
     p.set_defaults(func=merge.merge)
 
     p = subparser('filter', help='remove low-quality reads')
