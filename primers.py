@@ -40,6 +40,9 @@ class TrimmedRecords:
         return record[best_i + pl:]
 
     def hamming(self, seq):
+        if len(seq) != len(self.primer):
+            raise RuntimeError("Hamming distance must be between equal length sequences")
+
         dist = 0
         for pair in zip(self.primer, seq):
             if pair not in self.matching_chars:
@@ -47,9 +50,56 @@ class TrimmedRecords:
 
         return dist
 
+
+class SecondTrimmedRecords(TrimmedRecords):
+    '''
+    class for iterating through fastq and trimming second primer
+    
+    Unlike the first one, it does NOT throw away an entry without a matching bit
+    '''
+
+    # swo> todo: - use operator.ne for hamming
+    #            - make pl an instance variable
+
+    def __next__(self):
+        best_diffs = None
+        while best_diffs is None or best_diffs > self.max_diffs:
+            record = next(self.fastq_records)
+            seq = str(record.seq)
+            pl = len(self.primer)
+
+            best_i = None
+            best_score = None
+
+            for i in range(self.window):
+                if i == 0:
+                    diffs = self.hamming(seq[-pl: ])
+                else:
+                    diffs = self.hamming(seq[-(pl + i): -i])
+
+                if diffs == 0:
+                    return record[0: -(pl + i)]
+                else:
+                    if best_diffs is None or diffs < best_diffs:
+                        best_diffs = diffs
+                        best_i = i
+
+        if best_diffs < self.max_diffs:
+            return record[0: -(pl + best_i)]
+        else:
+            return record
+
+
 class PrimerRemover:
     def __init__(self, primer, fastq, window, max_diffs, output):
         fastq_entries = SeqIO.parse(fastq, 'fastq')
         entries = TrimmedRecords(primer, fastq_entries, window, max_diffs)
+        for entry in entries:
+            SeqIO.write(entry, output, 'fastq')
+
+class SecondPrimerRemover:
+    def __init__(self, primer, fastq, window, max_diffs, output):
+        fastq_entries = SeqIO.parse(fastq, 'fastq')
+        entries = SecondTrimmedRecords(primer, fastq_entries, window, max_diffs)
         for entry in entries:
             SeqIO.write(entry, output, 'fastq')

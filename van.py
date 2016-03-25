@@ -5,7 +5,7 @@ command-line interface
 '''
 
 import argparse, sys
-import convert, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter, merge
+import convert, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter, merge, truncate
 
 def parse_args(args=None):
     '''
@@ -31,13 +31,21 @@ def parse_args(args=None):
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output fastq')
     p.set_defaults(func=convert.convert_fastq)
 
-    p = subparser('trim', help='remove primer')
+    p = subparser('primer', help='remove primer')
     p.add_argument('primer')
     p.add_argument('fastq')
     p.add_argument('--max_diffs', '-d', default=2, type=int)
     p.add_argument('--window', '-w', default=20 ,type=int)
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'))
     p.set_defaults(func=primers.PrimerRemover)
+
+    p = subparser('primer2', help='remove second primer')
+    p.add_argument('primer')
+    p.add_argument('fastq')
+    p.add_argument('--max_diffs', '-d', default=2, type=int)
+    p.add_argument('--window', '-w', default=20 ,type=int)
+    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'))
+    p.set_defaults(func=primers.SecondPrimerRemover)
 
     p = subparser('demultiplex', help='assign reads to samples using index reads')
     p.add_argument('barcode_fasta')
@@ -71,12 +79,29 @@ def parse_args(args=None):
     p.add_argument('--stagger', '-g', action='store_true', help='staggered reads?')
     p.set_defaults(func=merge.merge)
 
-    p = subparser('filter', help='remove low-quality reads')
+    p = subparser('filter', help='globally filter low-quality reads')
     p.add_argument('fastq', help='input fastq')
     p.add_argument('--maxee', '-e', default=2.0, type=float, help='discard reads with > E expected errors')
     p.add_argument('--output', '-o', default=sys.stdout, help='output filtered fasta')
     p.add_argument('--output_format', '-t', choices=['fasta', 'fastq'], default='fasta')
     p.set_defaults(func=qfilter.qfilter)
+
+    p = subparser('truncate', help='trim sequences')
+
+    sp = p.add_subparsers()
+    sp_len = sp.add_parser('length', help='truncate at a specific length')
+    sp_len.add_argument('length', type=int, help='length at which to truncate')
+    sp_len.add_argument('fastx', help='input file')
+    sp_len.add_argument('--input_format', '-t', choices=['fasta', 'fastq'], default='fastq')
+    sp_len.add_argument('--keep', '-k', action='store_true', help='keep shorter sequences? otherwise discard')
+    sp_len.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='truncated fastx')
+    sp_len.set_defaults(func=truncate.length)
+
+    sp_tail = sp.add_parser('tail', help='truncate a tail of low-quality nucleotides')
+    sp_tail.add_argument('quality', type=int, help='quality score (probably 2 = #)')
+    sp_tail.add_argument('fastq', type=argparse.FileType('r'), help='input file')
+    sp_tail.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='truncated fastq')
+    sp_tail.set_defaults(func=truncate.tail)
 
     p = subparser('derep', help='find unique sequences (and write index file)')
     p.add_argument('fastx', help='input fastx')
