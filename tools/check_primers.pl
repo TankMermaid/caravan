@@ -36,7 +36,7 @@ my $average_position = 0.0;
 while (<>) {
 	next unless $. % 4 == 2;
 	if (/${regex}/) {
-      $average_position = ($average_position * $matches + @-) / ($matches + 1);
+      $average_position = ($average_position * $matches + $-[0]) / ($matches + 1);
       $matches += 1;
     }
 	$entries += 1;
