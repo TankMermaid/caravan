@@ -4,7 +4,7 @@
 command-line interface
 '''
 
-import argparse, sys
+import argparse, sys, textwrap
 import convert, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter, merge, truncate
 
 def parse_args(args=None):
@@ -55,9 +55,13 @@ def parse_args(args=None):
     p.add_argument('--input_format', '-t', choices=['fasta', 'fastq'], default='fastq')
     p.set_defaults(func=barcodes.BarcodeMapper)
 
-    p = subparser('intersect', help='intersect fastx and mapping files')
-    p.add_argument('--inputs', '-i', required=True, type=argparse.FileType('r'), nargs='+', help='input files')
-    p.add_argument('--outputs', '-o', required=True, type=argparse.FileType('w'), nargs='+', help='output files')
+    p = subparser('intersect', help='intersect fastx and mapping files', description=textwrap.dedent('''Looks for matching entries
+        in fastq, fasta, or tsv files. It's finicky: it demands four-line fastq entries, two-line fasta entries, and one-line
+        tsv entries. It can only parse files that have ids of the form 'read1', 'read2', etc., where the id would appear in the
+        first line of a fastq entry like '@read1', in the first line of a fasta entry like '>read1', or in the first tab-delimited
+        field of a tsv entry like 'read1'.'''))
+    p.add_argument('--inputs', '-i', required=True, type=argparse.FileType('r'), nargs='+', help='input files', metavar="file")
+    p.add_argument('--outputs', '-o', required=True, type=argparse.FileType('w'), nargs='+', help='output files', metavar="file")
     p.set_defaults(func=intersect.intersect)
 
     p = subparser('merge', help='merge forward and reverse reads')

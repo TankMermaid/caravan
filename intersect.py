@@ -1,110 +1,107 @@
 '''
 Intersect multiple files
+
+Note that this only works for 4-line fastq's. I ditched the Bio.SeqIO because it gets
+confusing when you have multiple files open.
 '''
-
-from Bio import SeqIO
-
-class Peeker:
-    def __init__(self, fh):
-        if isinstance(fh, str):
-            self.fh = open(fh)
-        else:
-            self.fh = fh
-
-        self.first = True
-
-        self.first_line = next(self.fh)
-
-        if self.first_line.startswith('>'):
-            self.filetype = 'fasta'
-        elif self.first_line.startswith('@'):
-            self.filetype = 'fastq'
-        elif self.first_line.count("\t") == 1:
-            self.filetype = 'two-column'
-        else:
-            raise RuntimeError("did not recognize file starting with: {}".format(self.first_line.rstrip()))
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.first:
-            self.first = False
-            return self.first_line
-        else:
-            return next(self.fh)
-
-    def readline(self):
-        return next(self)
-
-class TsvRecord:
-    def __init__(self, line):
-        self.line = line
-        self.id = line.split("\t")[0]
-
-    @staticmethod
-    def tsv_records(lines):
-        for line in lines:
-            yield TsvRecord(line)
-
-class RecordKeeper:
-    def __init__(self, fh, output):
-        if isinstance(fh, str):
-            self.fh = open(fh)
-        else:
-            self.fh = fh
-
-        self.output = output
-
-        self.peeker = Peeker(self.fh)
-
-        if self.peeker.filetype in ['fasta', 'fastq']:
-            self.records = SeqIO.parse(self.peeker, self.peeker.filetype)
-            self.output_record = lambda: SeqIO.write(self.record, self.output, self.peeker.filetype)
-        elif self.peeker.filetype == 'two-column':
-            self.records = TsvRecord.tsv_records(self.peeker)
-            self.output_record = lambda: self.output.write(self.record.line + "\n")
-        else:
-            raise RuntimeError("don't recognize filetype: {}".format(self.peeker.filetype))
-
-        self.skip_record()
-
-    def skip_record(self):
-        print("  obj skip")
-        self.record = next(self.records)
-        print("  done skip")
-
-    def current_id(self):
-        return self.record.id
-
 
 def extract_number(header):
     return int(header.lstrip('read'))
 
+def peek(input_fh, output_fh):
+    first_line = next(input_fh)
+    if first_line.startswith('@'):
+        return FastqRecords(input_fh, output_fh, first_line)
+    elif first_line.startswith('>'):
+        return FastaRecords(input_fh, output_fh, first_line)
+    elif first_line.count("\t") >= 1:
+        return TsvRecords(input_fh, output_fh, first_line)
+    else:
+        raise RuntimeError("did not recognize file starting with: '{}'".format(first_line.rstrip()))
+
+class Records:
+    def __init__(self, input_fh, output_fh, first_line):
+        self.input_fh = input_fh
+        self.output_fh = output_fh
+        self.first_line = first_line
+        self.first = True
+
+
+class FastqRecords(Records):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # read in three more lines
+        self.record = [self.first_line] + [next(self.input_fh) for i in range(3)]
+
+    def read_number(self):
+        return extract_number(self.record[0].lstrip('@'))
+
+    def increment(self):
+        self.record = [next(self.input_fh) for i in range(4)]
+
+    def output(self):
+        for line in self.record:
+            self.output_fh.write(line)
+
+
+class FastaRecords(Records):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.record = [self.first_line, next(self.input_fh)]
+
+    def read_number(self):
+        return extract_number(self.record[0].lstrip('>'))
+
+    def increment(self):
+        self.record = [next(self.input_fh) for i in range(2)]
+
+    def output(self):
+        for line in self.record:
+            self.output_fh.write(line)
+
+
+class TsvRecords(Records):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.record = first_line
+
+    def read_number(self):
+        return extract_number(self.record.split("\t")[0])
+
+    def increment(self):
+        self.record = next(self.input_fh)
+
+    def output(self):
+        self.output_fh.write(self.record)
+
+
 def intersect(inputs, outputs):
-    keepers = [RecordKeeper(inp, outp) for inp, outp in zip(inputs, outputs)]
+    if len(inputs) != len(outputs):
+        raise RuntimeError("number of inputs and outputs not matched")
 
-    while True:
-        print("start while")
-        current_is = [extract_number(keeper.current_id()) for keeper in keepers]
-        print(current_is)
-        max_i = max(current_is)
-        
-        to_skip = [keeper for i, keeper in zip(current_is, keepers) if i < max_i]
-        print("skipping", [i for i in current_is if i < max_i])
+    keepers = [peek(inp, outp) for inp, outp in zip(inputs, outputs)]
 
-        if len(to_skip) == 0:
-            # all entries are aligned; output and update
-            print("outputting all")
-            for keeper in keepers:
-                print("  output")
-                keeper.output_record()
-                keeper.skip_record()
-        else:
-            # skip records that are the minimum ones
-            print("skipping some")
-            for keepr in to_skip:
-                print("  skip")
-                keeper.skip_record()
+    try:
+        while True:
+            current_nums = [k.read_number() for k in keepers]
+            max_num = max(current_nums)
 
-            print("done skipping")
+            to_skip = [i for i, num in enumerate(current_nums) if num < max_num]
+
+            if len(to_skip) == 0:
+                # all entries are aligned; output and update
+                for k in keepers:
+                    k.output()
+
+                for k in keepers:
+                    k.increment()
+            else:
+                # skip records that are the minimum ones
+                for i in to_skip:
+                    keepers[i].increment()
+
+    except StopIteration:
+        pass
