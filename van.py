@@ -39,7 +39,10 @@ def parse_args(args=None):
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'))
     p.set_defaults(func=primers.PrimerRemover)
 
-    p = subparser('primer2', help='remove second primer')
+    p = subparser('primer2', help='remove second primer', description=textwrap.dedent('''Looks for the primer (which
+        can have degenerate bases) at the END of each input sequence. The idea is that this is the primer that would
+        be seen at the tail end of the sequence. Unlike the other primer command, if the primer does not match, the
+        entry is kept, NOT thrown away.'''))
     p.add_argument('primer')
     p.add_argument('fastq')
     p.add_argument('--max_diffs', '-d', default=2, type=int)

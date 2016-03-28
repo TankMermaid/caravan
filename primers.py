@@ -63,27 +63,30 @@ class SecondTrimmedRecords(TrimmedRecords):
 
     def __next__(self):
         best_diffs = None
-        while best_diffs is None or best_diffs > self.max_diffs:
-            record = next(self.fastq_records)
-            seq = str(record.seq)
-            pl = len(self.primer)
+        record = next(self.fastq_records)
+        seq = str(record.seq)
+        pl = len(self.primer)
 
-            best_i = None
-            best_score = None
+        best_i = None
+        best_score = None
 
-            for i in range(self.window):
-                if i == 0:
-                    diffs = self.hamming(seq[-pl: ])
-                else:
-                    diffs = self.hamming(seq[-(pl + i): -i])
+        for i in range(self.window):
+            # count the number of differences. need a funny 'else' here because
+            # python takes s[-0] as s[0], i.e., the first character
+            if i == 0:
+                diffs = self.hamming(seq[-pl: ])
+            else:
+                diffs = self.hamming(seq[-(pl + i): -i])
 
-                if diffs == 0:
-                    return record[0: -(pl + i)]
-                else:
-                    if best_diffs is None or diffs < best_diffs:
-                        best_diffs = diffs
-                        best_i = i
+            if diffs == 0:
+                return record[0: -(pl + i)]
+            else:
+                if best_diffs is None or diffs < best_diffs:
+                    best_diffs = diffs
+                    best_i = i
 
+        # if the differences were good, return the trimmed version. otherwise,
+        # return the whole thing, unchanged
         if best_diffs < self.max_diffs:
             return record[0: -(pl + best_i)]
         else:
