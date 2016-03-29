@@ -9,15 +9,23 @@ use Pod::Usage;
 my $max_entries = 0;
 my $verbose = 0;
 my $help = 0;
+my $rc = 0;
 
 GetOptions("n=i" => \$max_entries
     , 'verbose' => \$verbose
+    , 'rc' => \$rc
     , 'help' => \$help)
     or pod2usage(2);
 
 pod2usage(2) if $help;
 
 my $primer = shift @ARGV;
+$primer = uc $primer;
+
+if ($rc) {
+    $primer =~ tr/ATGCUNYRSWKMBDHV/TACGANRYSWMKVHDB/;
+    $primer = reverse($primer);
+}
 
 # prepare a regex library
 my %code = qw{W [AT] S [CG] M [AC] K [GT] R [AG] Y [CT]
@@ -51,7 +59,9 @@ while (<>) {
 
 my $match_percent = sprintf("%i", $matches / $entries * 100) . "%";
 say "of $entries entries, $matches match the primer (i.e., $match_percent)";
-say "min/avg/max position: " . sprintf("%i / %.2f / %i", $min_position, $average_position, $max_position);
+if ($matches > 0) {
+    say "min/avg/max position: " . sprintf("%i / %.2f / %i", $min_position, $average_position, $max_position);
+}
 
 __END__
 
@@ -65,12 +75,13 @@ check_primers.pl PRIMER [options] [file]
 
     Options
       -help
-      -n    number of entries
+      -n N   check only the first N entries
+      -rc    take reverse complement of provided primer
 
 =head1 DESCRIPTION
 
 This program will read the input fastqs and see how many have the
-given primer in the given window. Will do regex matching for non-ACGT
+given primer in the given window. It does regex matching for non-ACGT
 characters.
 
 =cut
