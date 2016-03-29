@@ -33,17 +33,25 @@ say "searching for primer $primer => regex $regex..." if $verbose;
 my $entries = 0;
 my $matches = 0;
 my $average_position = 0.0;
+my $max_position = 0;
+my $min_position = -1;
 while (<>) {
 	next unless $. % 4 == 2;
 	if (/${regex}/) {
       $average_position = ($average_position * $matches + $-[0]) / ($matches + 1);
+
+      $max_position = $-[0] if $-[0] > $max_position;
+      $min_position = $-[0] if ($min_position == -1 or $-[0] < $min_position);
+
       $matches += 1;
     }
 	$entries += 1;
 	last if $max_entries > 0 and $entries >= $max_entries;
 }
 
-say "of $entries entries, $matches match the primer (at average position $average_position)"
+my $match_percent = sprintf("%i", $matches / $entries * 100) . "%";
+say "of $entries entries, $matches match the primer (i.e., $match_percent)";
+say "min/avg/max position: " . sprintf("%i / %.2f / %i", $min_position, $average_position, $max_position);
 
 __END__
 
