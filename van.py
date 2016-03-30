@@ -169,7 +169,8 @@ def parse_args(args=None):
     p.add_argument('--samples', '-s', help='filename of newline separated sample names in order')
     p.add_argument('--rename', '-r', action='store_true', help='use a two-column sample list to rename them?')
     p.add_argument('--output_ext', '-o', default='counts', help='output filename extension')
-    p.add_argument('--seq_table', '-q', default=None, help='output a seq table?')
+    p.add_argument('--seq_table', '-q', action='store_true', help='output a seq table?')
+    p.add_argument('--seq_table_name', default='seq', help='pre-extension name for seq table (if using -q)')
     p.add_argument('--force', '-f', action='store_true', help='force overwrite of existing files?')
     p.set_defaults(func=table.Tabler.otu_tables)
 

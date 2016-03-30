@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 '''
 Create OTU tables using information from
     * a membership .yml that has a hash sequence => OTU
@@ -11,7 +9,7 @@ from operator import itemgetter
 
 class Tabler:
     @staticmethod
-    def table(membership, provenances, output, samples=None, rename=False, ignore_unmapped_otus=True):
+    def table(provenances, membership, output, samples=None, rename=False, ignore_unmapped_otus=True):
         # populate the tables
         table = {}  # {sample => {otu => counts}}
         otu_abunds = {} # {otu => counts across samples}
@@ -28,8 +26,9 @@ class Tabler:
             if otu not in otu_abunds:
                 otu_abunds[otu] = 0
 
-            if type(provenances[seq]) is not dict:
-                raise RuntimeError("malformed provenances file: sequence '{}' points to a non-dict object".format(seq))
+            obj_type = type(provenances[seq]) 
+            if obj_type is not dict:
+                raise RuntimeError("malformed provenances file: sequence '{}' points to a non-dict object, type {}, with content {}".format(seq, obj_type, provenances[seq]))
 
             for sample in provenances[seq]:
                 c = provenances[seq][sample]
@@ -77,7 +76,7 @@ class Tabler:
             output.write("\t".join([otu] + [str(table[sample].get(otu, 0)) for sample in samples]) + "\n")
 
     @classmethod
-    def otu_table(cls, membership, provenances, output, samples=None, rename=False):
+    def otu_table(cls, provenances, membership, output, samples=None, rename=False):
         # get the index
         with open(provenances) as f:
             provenances_dict = yaml.load(f)
@@ -85,17 +84,17 @@ class Tabler:
         with open(membership) as f:
             membership_dict = yaml.load(f)
 
-        cls.table(membership_dict, provenances_dict, output, samples, rename)
+        cls.table(provenances_dict, membership_dict, output, samples, rename)
 
     @classmethod
-    def otu_tables(cls, provenances, memberships, output_ext, samples=None, rename=False, seq_table=None, force=False):
+    def otu_tables(cls, provenances, memberships, output_ext, samples=None, rename=False, seq_table=False, seq_table_name="seq", force=False):
         # check that all the output locations are OK first
         base_output_names = [os.path.splitext(os.path.basename(m))[0] for m in memberships]
         output_names = [base + '.' + output_ext for base in base_output_names]
         existing_files = [fn for fn in output_names if os.path.exists(fn)]
 
-        if seq_table is not None:
-            seq_table_output_name = seq_table + '.' + output_ext
+        if seq_table:
+            seq_table_output_name = seq_table_name + '.' + output_ext
             if os.path.exists(seq_table_output_name):
                 existing_files.append(seq_table_output_name)
 
@@ -112,12 +111,13 @@ class Tabler:
                 membership_dict = yaml.load(f)
 
             with open(output_fn, 'w') as f:
-                cls.table(membership_dict, provenances_dict, f, samples, rename)
+                cls.table(provenances_dict, membership_dict, f, samples, rename)
 
         # make the seq table if called for
         if seq_table is not None:
             membership_dict = {seq: seq for seq in provenances_dict}
-            cls.table(membership_dict, provenances_dict, output, samples, rename)
+            with open(seq_table_output_name, 'w') as output:
+                cls.table(provenances_dict, membership_dict, output, samples, rename)
 
     @classmethod
     def seq_table(cls, provenances, output, samples=None, rename=False):
@@ -128,4 +128,4 @@ class Tabler:
         # make up membership as self => self
         membership_dict = {seq: seq for seq in provenances_dict}
 
-        cls.table(membership_dict, provenances_dict, output, samples, rename)
+        cls.table(provenances_dict, membership_dict, output, samples, rename)
