@@ -13,7 +13,7 @@ def lengthed_entries(entries, length, keep):
             yield entry[0: length]
 
 def length(length, fastx, input_format, keep, output):
-    entries = lengthed_entries(SeqIO.parse(fastx, input_formap), length, keep)
+    entries = lengthed_entries(SeqIO.parse(fastx, input_format), length, keep)
     SeqIO.write(entries, output, input_format)
 
 def tailed_entries(entries, quality):
