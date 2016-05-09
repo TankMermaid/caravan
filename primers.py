@@ -29,6 +29,11 @@ class TrimmedRecords:
             best_score = None
 
             for i in range(self.window):
+                # if the sequence is short, then the primer in this window might not
+                # even fit in the sequence
+                if len(seq) <= i + pl:
+                    continue
+
                 diffs = self.hamming(seq[i: i + pl])
                 if diffs == 0:
                     return record[i + pl:]
@@ -41,7 +46,7 @@ class TrimmedRecords:
 
     def hamming(self, seq):
         if len(seq) != len(self.primer):
-            raise RuntimeError("Hamming distance must be between equal length sequences")
+            raise RuntimeError("Hamming distance must be between equal length sequences, got sequence with length {} and primer with length {}".format(len(seq), len(self.primer)))
 
         dist = 0
         for pair in zip(self.primer, seq):

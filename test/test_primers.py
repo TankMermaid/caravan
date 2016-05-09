@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# todo:
+# - add a test if the sequence is short and the window requires it to go past the end of the sequence
+# - add a test if the sequence is shorter than the primer! 
+
 '''
 unit tests for merge.py
 '''
