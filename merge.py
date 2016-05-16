@@ -5,7 +5,7 @@ Merge pairs of reads
 import operator, math
 from Bio import SeqIO, SeqRecord, Seq
 
-def merge(forward, reverse, max_diffs, size, size_var, output):
+def merge(forward, reverse, max_diffs, size, size_var, output, stagger=False):
     '''
     forward : string (filepath) or filehandle
         fastq
@@ -20,31 +20,42 @@ def merge(forward, reverse, max_diffs, size, size_var, output):
     for_recs = SeqIO.parse(forward, 'fastq')
     rev_recs = SeqIO.parse(reverse, 'fastq')
 
-    out_recs = merged_reads(for_recs, rev_recs, max_diffs, min_size, max_size)
+    out_recs = merged_reads(for_recs, rev_recs, max_diffs, min_size, max_size, stagger=stagger)
     SeqIO.write(out_recs, output, 'fastq')
 
-def merged_reads(for_recs, rev_recs, max_diffs, min_size, max_size):
+def merged_reads(for_recs, rev_recs, max_diffs, min_size, max_size, stagger=False):
     for for_rec, rev_rec in zip(for_recs, rev_recs):
         rc_rev_rec = rev_rec.reverse_complement()
-        best_diffs, best_overlap = best_merge_position(for_rec, rc_rev_rec, min_size, max_size)
+        best_diffs, best_overlap = best_merge_position(for_rec, rc_rev_rec, min_size, max_size, stagger=stagger)
 
         if best_diffs <= max_diffs:
-            yield merged_at(for_rec, rc_rev_rec, best_overlap)
+            yield merged_at(for_rec, rc_rev_rec, best_overlap, stagger=stagger)
 
-def best_merge_position(for_rec, rev_rec, min_size, max_size):
+def best_merge_position(for_rec, rev_rec, min_size, max_size, stagger=False):
     read_lens = len(for_rec) + len(rev_rec)
     window = range(read_lens - max_size, read_lens - min_size)
-    results = [(hamming_distance(for_rec[-overlap: ], rev_rec[0: overlap]), overlap) for overlap in window]
+
+    if not stagger:
+        results = [(hamming_distance(for_rec[-overlap: ], rev_rec[0: overlap]), overlap) for overlap in window]
+    else:
+        results = [(hamming_distance(rev_rec[-overlap: ], for_rec[0: overlap]), overlap) for overlap in window]
+        
     best_diffs, best_overlap = min(results)
     return best_diffs, best_overlap
 
 def hamming_distance(x, y):
     return sum(map(operator.ne, x, y))
 
-def merged_at(x, y, overlap):
-    for_part = x[0: -overlap]
-    rev_part = y[overlap: ]
-    mid_part = merge_consensus(x[-overlap: ], y[0: overlap])
+def merged_at(x, y, overlap, stagger=False):
+    if not stagger:
+        for_part = x[0: -overlap]
+        rev_part = y[overlap: ]
+        mid_part = merge_consensus(x[-overlap: ], y[0: overlap])
+    else:
+        for_part = x[overlap: ]
+        rev_part = y[0: -overlap]
+        mid_part = merge_consensus(x[0: overlap], y[-overlap: ])
+
     new_record = for_part + mid_part + rev_part
     new_record.id = for_part.id
     new_record.description = ''

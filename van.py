@@ -4,8 +4,8 @@
 command-line interface
 '''
 
-import argparse, sys
-import convert, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter, merge
+import argparse, sys, textwrap
+import convert, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter, merge, truncate
 
 def parse_args(args=None):
     '''
@@ -31,13 +31,24 @@ def parse_args(args=None):
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output fastq')
     p.set_defaults(func=convert.convert_fastq)
 
-    p = subparser('trim', help='remove primer')
+    p = subparser('primer', help='remove primer')
     p.add_argument('primer')
     p.add_argument('fastq')
     p.add_argument('--max_diffs', '-d', default=2, type=int)
     p.add_argument('--window', '-w', default=20 ,type=int)
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'))
     p.set_defaults(func=primers.PrimerRemover)
+
+    p = subparser('primer2', help='remove second primer', description=textwrap.dedent('''Looks for the primer (which
+        can have degenerate bases) at the END of each input sequence. The idea is that this is the primer that would
+        be seen at the tail end of the sequence. Unlike the other primer command, if the primer does not match, the
+        entry is kept, NOT thrown away.'''))
+    p.add_argument('primer')
+    p.add_argument('fastq')
+    p.add_argument('--max_diffs', '-d', default=2, type=int)
+    p.add_argument('--window', '-w', default=20 ,type=int)
+    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'))
+    p.set_defaults(func=primers.SecondPrimerRemover)
 
     p = subparser('demultiplex', help='assign reads to samples using index reads')
     p.add_argument('barcode_fasta')
@@ -47,19 +58,14 @@ def parse_args(args=None):
     p.add_argument('--input_format', '-t', choices=['fasta', 'fastq'], default='fastq')
     p.set_defaults(func=barcodes.BarcodeMapper)
 
-    p = subparser('intersect2', help='intersect mapping file and fastq')
-    p.add_argument('mapping', type=argparse.FileType('r'), help='tsv from demultiplex')
-    p.add_argument('forward', type=argparse.FileType('r'), help='forward reads fastq')
-    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output fastq')
-    p.set_defaults(func=intersect.intersect2)
-
-    p = subparser('intersect3', help='intersect mapping file, forward fastq, and reverse fastq')
-    p.add_argument('mapping', type=argparse.FileType('r'), help='tsv from demultiplex')
-    p.add_argument('forward', type=argparse.FileType('r'), help='forward input fastq')
-    p.add_argument('reverse', type=argparse.FileType('r'), help='reverse input fastq')
-    p.add_argument('forward_output', type=argparse.FileType('w'), help='forward output fastq')
-    p.add_argument('reverse_output', type=argparse.FileType('w'), help='reverse output fastq')
-    p.set_defaults(func=intersect.intersect3)
+    p = subparser('intersect', help='intersect fastx and mapping files', description=textwrap.dedent('''Looks for matching entries
+        in fastq, fasta, or tsv files. It's finicky: it demands four-line fastq entries, two-line fasta entries, and one-line
+        tsv entries. It can only parse files that have ids of the form 'read1', 'read2', etc., where the id would appear in the
+        first line of a fastq entry like '@read1', in the first line of a fasta entry like '>read1', or in the first tab-delimited
+        field of a tsv entry like 'read1'.'''))
+    p.add_argument('--inputs', '-i', required=True, type=argparse.FileType('r'), nargs='+', help='input files', metavar="file")
+    p.add_argument('--outputs', '-o', required=True, type=argparse.FileType('w'), nargs='+', help='output files', metavar="file")
+    p.set_defaults(func=intersect.intersect)
 
     p = subparser('merge', help='merge forward and reverse reads')
     p.add_argument('forward', help='forward fastq')
@@ -68,14 +74,32 @@ def parse_args(args=None):
     p.add_argument('--max_diffs', '-d', default=2, type=int, help='maximum mismatches allowed in alignment')
     p.add_argument('--size', '-s', type=int, default=253, help='intended product size? will trash merges that don\'t fit')
     p.add_argument('--size_var', '-v', type=int, default=5, help='allowed variance in product size?')
+    p.add_argument('--stagger', '-g', action='store_true', help='staggered reads?')
     p.set_defaults(func=merge.merge)
 
-    p = subparser('filter', help='remove low-quality reads')
+    p = subparser('filter', help='globally filter low-quality reads')
     p.add_argument('fastq', help='input fastq')
     p.add_argument('--maxee', '-e', default=2.0, type=float, help='discard reads with > E expected errors')
     p.add_argument('--output', '-o', default=sys.stdout, help='output filtered fasta')
     p.add_argument('--output_format', '-t', choices=['fasta', 'fastq'], default='fasta')
     p.set_defaults(func=qfilter.qfilter)
+
+    p = subparser('truncate', help='trim sequences')
+
+    sp = p.add_subparsers()
+    sp_len = sp.add_parser('length', help='truncate at a specific length')
+    sp_len.add_argument('length', type=int, help='length at which to truncate')
+    sp_len.add_argument('fastx', help='input file')
+    sp_len.add_argument('--input_format', '-t', choices=['fasta', 'fastq'], default='fastq')
+    sp_len.add_argument('--keep', '-k', action='store_true', help='keep shorter sequences? otherwise discard')
+    sp_len.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='truncated fastx')
+    sp_len.set_defaults(func=truncate.length)
+
+    sp_tail = sp.add_parser('tail', help='truncate a tail of low-quality nucleotides')
+    sp_tail.add_argument('quality', type=int, help='quality score (probably 2 = #)')
+    sp_tail.add_argument('fastq', type=argparse.FileType('r'), help='input file')
+    sp_tail.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='truncated fastq')
+    sp_tail.set_defaults(func=truncate.tail)
 
     p = subparser('derep', help='find unique sequences (and write index file)')
     p.add_argument('fastx', help='input fastx')
@@ -102,9 +126,10 @@ def parse_args(args=None):
     p = subparser('denovo', help='cluster de novo with usearch')
     p.add_argument('radius', type=float, help='0.0-100.0, recommended at most 3.0 = 97%% identity')
     p.add_argument('fasta', help='input fasta')
-    p.add_argument('--output', '-o', default='out.fasta', help='representative sequences fasta')
+    p.add_argument('output', help='representative sequences fasta')
     p.add_argument('--index', '-i', default=None, help='uparse file mapping seqs to otus?')
     p.add_argument('--rename', '-r', default='otu', help='rename otus using this prefix')
+    p.add_argument('--force', '-f', action='store_true', help='force a radius above 3.0?')
     p.set_defaults(func=usearch.Usearcher().cluster_denovo)
 
     p = subparser('ref', help='compare a fasta to a reference database')
@@ -144,6 +169,9 @@ def parse_args(args=None):
     p.add_argument('--samples', '-s', help='filename of newline separated sample names in order')
     p.add_argument('--rename', '-r', action='store_true', help='use a two-column sample list to rename them?')
     p.add_argument('--output_ext', '-o', default='counts', help='output filename extension')
+    p.add_argument('--seq_table', '-q', action='store_true', help='output a seq table?')
+    p.add_argument('--seq_table_name', default='seq', help='pre-extension name for seq table (if using -q)')
+    p.add_argument('--force', '-f', action='store_true', help='force overwrite of existing files?')
     p.set_defaults(func=table.Tabler.otu_tables)
 
     p = subparser('seq_table', help='make OTU table from provenances yaml')

@@ -69,7 +69,7 @@ class TestSidEntry:
         assert rdp.FixrankParser.parse_sid_entry('seq4;size=500') == 'seq4'
 
 class WithEntries:
-    entries = ['seq1;size=272905;', '', 'Root', 'rootrank', '1.0', 'Bacteria', 'domain', '1.0', '"Bacteroidetes"', 'phylum', '1.0', 'Flavobacteriia', 'class', '0.75', '"Flavobacteriales"', 'order', '1.0', 'Flavobacteriaceae', 'family', '1.0', 'Flavobacterium', 'genus', '1.0']
+    entries = ['seq1;size=272905;', '', 'Bacteria', 'domain', '1.0', '"Bacteroidetes"', 'phylum', '1.0', 'Flavobacteriia', 'class', '0.75', '"Flavobacteriales"', 'order', '1.0', 'Flavobacteriaceae', 'family', '1.0', 'Flavobacterium', 'genus', '1.0']
     sid = 'seq1'
     lin = rdp.FixrankLineage([['domain', 'Bacteria', 1.0], ['phylum', 'Bacteroidetes', 1.0], ['class', 'Flavobacteriia', 0.75], ['order', 'Flavobacteriales', 1.0], ['family', 'Flavobacteriaceae', 1.0], ['genus', 'Flavobacterium', 1.0]])
 
@@ -83,7 +83,7 @@ class TestRanksAtConfidence(WithEntries):
 
 class TestRanksToRank:
     def test_correct(self):
-        sid, lin = rdp.FixrankParser.parse_entries(['seq1', '', 'Root', 'rootrank', '1.0', 'K', 'domain', '1.0', 'P', 'phylum', '0.5', 'C', 'class', '1.0'])
+        sid, lin = rdp.FixrankParser.parse_entries(['seq1', '', 'K', 'domain', '1.0', 'P', 'phylum', '0.5', 'C', 'class', '1.0'])
         assert lin.ranks_to_rank('phylum') == [rdp.FixrankRank('domain', 'K', 1.0), rdp.FixrankRank('phylum', 'P', 0.5)]
 
 class TestTrimToRank:
@@ -94,15 +94,15 @@ class TestTrimToRank:
 
 class TestParseLine:
     def test_correct(self):
-        line = 'seq494517;size=2;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Proteobacteria"\tphylum\t1.0\tAlphaproteobacteria\tclass\t0.89\tCaulobacterales\torder\t0.42\tCaulobacteraceae\tfamily\t0.41\tBrevundimonas\tgenus\t0.38\n'
+        line = 'seq494517;size=2;\t\tBacteria\tdomain\t1.0\t"Proteobacteria"\tphylum\t1.0\tAlphaproteobacteria\tclass\t0.89\tCaulobacterales\torder\t0.42\tCaulobacteraceae\tfamily\t0.41\tBrevundimonas\tgenus\t0.38\n'
         sid, lin = rdp.FixrankParser.parse_line(line)
         assert sid == 'seq494517'
         assert lin == rdp.FixrankLineage([['domain', 'Bacteria', 1.0], ['phylum', 'Proteobacteria', 1.0], ['class', 'Alphaproteobacteria', 0.89], ['order', 'Caulobacterales', 0.42], ['family', 'Caulobacteraceae', 0.41], ['genus', 'Brevundimonas', 0.38]])
 
 class WithContent:
-    content = '''seq1;size=272905;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t0.0\tFlavobacteriia\tclass\t1.0\t"Flavobacteriales"\torder\t1.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0
-seq2;size=229776;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t1.0\tFlavobacteriia\tclass\t0.0\t"Flavobacteriales"\torder\t1.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0
-seq3;size=212890;\t\tRoot\trootrank\t1.0\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t1.0\tFlavobacteriia\tclass\t1.0\t"Flavobacteriales"\torder\t0.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0'''
+    content = '''seq1;size=272905;\t\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t0.0\tFlavobacteriia\tclass\t1.0\t"Flavobacteriales"\torder\t1.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0
+seq2;size=229776;\t\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t1.0\tFlavobacteriia\tclass\t0.0\t"Flavobacteriales"\torder\t1.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0
+seq3;size=212890;\t\tBacteria\tdomain\t1.0\t"Bacteroidetes"\tphylum\t1.0\tFlavobacteriia\tclass\t1.0\t"Flavobacteriales"\torder\t0.0\tFlavobacteriaceae\tfamily\t1.0\tFlavobacterium\tgenus\t1.0'''
     lines = content.split("\n")
     fixrank = io.StringIO(content)
 

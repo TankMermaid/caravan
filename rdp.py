@@ -26,18 +26,13 @@ class FixrankRank:
 
 
 class FixrankLineage:
-    standard_rank_names = ['rootrank', 'domain', 'phylum', 'class', 'order', 'family', 'genus']
-
-    def __init__(self, ranks, standardize=False, min_confidence=None):
+    def __init__(self, ranks, min_confidence=None):
         self.ranks = ranks
 
         # try to recast lists as ranks
         for i in range(len(self.ranks)):
             if type(self.ranks[i]) is list:
                 self.ranks[i] = FixrankRank(*self.ranks[i])
-
-        if standardize:
-            self.standardize()
 
         if min_confidence is not None:
             self.trim_at_confidence(min_confidence)
@@ -60,24 +55,6 @@ class FixrankLineage:
         '''trim my entries to a confidence'''
         self.min_confidence = min_confidence
         self.ranks = self.ranks_at_confidence(min_confidence)
-
-    def standardized_ranks(self):
-        '''return ranks in standard level order, filling empties'''
-        # make a dictionary like 'phylum' => FrRank['phylum', 'Chloroflexi', 0.8]
-        mix_ranks = {rank.name: rank for rank in self.ranks}
-        out = []
-
-        for name in self.standard_rank_names:
-            if name in mix_ranks:
-                out.append(mix_ranks[name])
-            else:
-                out.append(FixrankRank(name, 'no_entry_{}'.format(name), 0.0))
-
-        return out
-
-    def standardize(self):
-        '''make my ranks standard ranks'''
-        self.ranks = self.standardized_ranks()
 
     def ranks_to_rank(self, name):
         '''return ranks down to a certain level'''
@@ -126,9 +103,6 @@ class FixrankParser:
         entry_triplets = zip(*[iter(entries[2:])] * 3)
         ranks = [cls.parse_triplet(t) for t in entry_triplets]
 
-        # the first entry should be root, whatever that is
-        assert ranks[0] == FixrankRank('rootrank', 'Root', 1.0)
-
         return sid_entry, FixrankLineage(ranks)
 
     @classmethod
@@ -156,7 +130,6 @@ class FixrankParser:
             # parse_line gives none if RDP used reverse complement
             if res is not None:
                 sid, lineage = res
-                lineage.standardize()
 
                 if min_confidence is not None:
                     lineage.trim_at_confidence(min_confidence)
@@ -177,7 +150,6 @@ class FixrankParser:
 
                 if res is not None:
                     sid, lineage = res
-                    lineage.standardize()
 
                     if min_confidence is not None:
                         lineage.trim_at_confidence(min_confidence)
