@@ -103,7 +103,16 @@ class FixrankParser:
         entry_triplets = zip(*[iter(entries[2:])] * 3)
         ranks = [cls.parse_triplet(t) for t in entry_triplets]
 
+        cls.validate_fixrank_ranks(ranks)
+
         return sid_entry, FixrankLineage(ranks)
+
+    @staticmethod
+    def validate_fixrank_ranks(ranks):
+        # check that the list of rank-levels is exactly what comes from a fixrank
+        levels = [rank.name for rank in ranks]
+        if levels != ['domain', 'phylum', 'class', 'order', 'family', 'genus']:
+            raise RuntimeError('could not parse ranks as fixrank; maybe you put in an allrank?')
 
     @classmethod
     def parse_line(cls, line):
