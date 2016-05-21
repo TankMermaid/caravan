@@ -87,7 +87,7 @@ def parse_args(args=None):
     p = subparser('truncate', help='trim sequences')
 
     sp = p.add_subparsers()
-    sp_len = sp.add_parser('length', help='truncate at a specific length')
+    sp_len = sp.add_parser('length', help='truncate at a specific length', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     sp_len.add_argument('length', type=int, help='length at which to truncate')
     sp_len.add_argument('fastx', help='input file')
     sp_len.add_argument('--input_format', '-t', choices=['fasta', 'fastq'], default='fastq')
@@ -95,7 +95,7 @@ def parse_args(args=None):
     sp_len.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='truncated fastx')
     sp_len.set_defaults(func=truncate.length)
 
-    sp_tail = sp.add_parser('tail', help='truncate a tail of low-quality nucleotides')
+    sp_tail = sp.add_parser('tail', help='truncate a tail of low-quality nucleotides', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     sp_tail.add_argument('quality', type=int, help='quality score (probably 2 = #)')
     sp_tail.add_argument('fastq', type=argparse.FileType('r'), help='input file')
     sp_tail.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='truncated fastq')
