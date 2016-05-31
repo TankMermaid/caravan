@@ -5,7 +5,7 @@ command-line interface
 '''
 
 import argparse, sys, textwrap
-import convert, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter, merge, truncate
+import convert, folder, primers, barcodes, derep, usearch, tax, table, parse, rdp, intersect, qfilter, merge, truncate
 
 def parse_args(args=None):
     '''
@@ -30,6 +30,14 @@ def parse_args(args=None):
     p.add_argument('--rename', '-r', action='store_true', help='rename reads sequentially?')
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output fastq')
     p.set_defaults(func=convert.convert_fastq)
+
+    p = subparser('folder', help='concatenate fastq\'s from multiple directories')
+    p.add_argument('dir_pos_regex', help='regex that identifies the names of folders you want to keep')
+    p.add_argument('for_out', type=argparse.FileType('w'), help='forward fastq output')
+    p.add_argument('rev_out', type=argparse.FileType('w'), help='reverse fastq output')
+    p.add_argument('top_dirs', nargs='+', help='top-level directories (each of which has subfolders, one per samples)')
+    p.add_argument('--verbose', '-v', action='store_true', help='show directory names and paired samples')
+    p.set_defaults(func=folder.folder)
 
     p = subparser('primer', help='remove primer')
     p.add_argument('primer')

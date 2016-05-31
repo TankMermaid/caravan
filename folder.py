@@ -1,8 +1,63 @@
-#!/usr/bin/env python
-#
 # author: scott olesen <swo@mit.edu>
 
-import argparse, os, re
+'''
+Functionality for concatenating fastq's from multiple, already-demultiplexed directories
+into a single, renamed fastq. For example, a "top-level directory" 160111Foo might have a
+structure like:
+
+    160111Foo/
+    ├── 160119_AJPVA_1737T_L1_1_sequence_unmapped_barcodes.fastq
+    ├── 160119_AJPVA_1737T_L1_2_sequence_unmapped_barcodes.fastq
+    ├── D16-100001-1737T
+    │   ├── 160111Foo_D16-100001_1_sequence_contam_report.txt
+    │   ├── 160111Foo_D16-100001_1_sequence.fastq
+    │   ├── 160111Foo_D16-100001_1_sequence_fastqc.html
+    │   ├── 160111Foo_D16-100001_1_sequence_fastqc.zip
+    │   ├── 160111Foo_D16-100001_1_sequence_tagcount.xls
+    │   ├── 160111Foo_D16-100001_2_sequence.fastq
+    │   ├── 160111Foo_D16-100001_2_sequence_fastqc.html
+    │   ├── 160111Foo_D16-100001_2_sequence_fastqc.zip
+    │   ├── 160111Foo_D16-100001_2_sequence_tagcount.xls
+    │   ├── 160111Foo_D16-100001_phiX_bestmap.bam
+    │   ├── 160111Foo_D16-100001_phiX_bestmap.sam
+    │   └── 160111Foo_D16-100001_phiX_bestmap_stats.json
+    ├── D16-100002-1737T
+    │   ├── 160111Foo_D16-100002_1_sequence_contam_report.txt
+    │   ├── 160111Foo_D16-100002_1_sequence.fastq
+    │   ├── 160111Foo_D16-100002_1_sequence_fastqc.html
+    │   ├── 160111Foo_D16-100002_1_sequence_fastqc.zip
+    │   ├── 160111Foo_D16-100002_1_sequence_tagcount.xls
+    │   ├── 160111Foo_D16-100002_2_sequence.fastq
+    │   ├── 160111Foo_D16-100002_2_sequence_fastqc.html
+    │   ├── 160111Foo_D16-100002_2_sequence_fastqc.zip
+    │   ├── 160111Foo_D16-100002_2_sequence_tagcount.xls
+    │   ├── 160111Foo_D16-100002_phiX_bestmap.bam
+    │   ├── 160111Foo_D16-100002_phiX_bestmap.sam
+    │   └── 160111Foo_D16-100002_phiX_bestmap_stats.json
+    └── infosite-1737T
+        ├── 160119_AJPVA_1737T_infosite.rst
+            ├── images
+                │   ├── 160119_AJPVA_1737T_tagcount_kmer_counts.png
+                    │   └── PPPQC_1737T.jpg
+                        ├── index.html
+                            └── index.rst
+
+This script can take a list of these top-level directories and a "positive directory
+regex" that will identify the wanted folders. In this case, "^D16-" might be a good
+regex, since it will ignore the "infosite-" directory.
+
+The script will look for pairs of fastq's with _1_ and _2_ in each folder. It will then
+concatenate all the _1_'s into the forward out, renaming each entry into the form
+"@sample=[sample_name];[number of sequence in that sample". In the above situation,
+the very first reads in the forward output and reverse output will have the name
+
+    @sample=D16-100001-1737T;1
+
+These names are compatible with caravan's expectations about a naming scheme when
+dereplicating.
+'''
+
+import os, re
 from Bio import SeqIO
 
 def matches_regexes(query, pos, neg):
@@ -47,27 +102,19 @@ def renamed_entries(fns, samples):
             record.description = ""
             yield record
 
-if __name__ == '__main__':
-    p = argparse.ArgumentParser(description="concatenate fastq's from multiple directories")
-    p.add_argument('dir_pos_regex', help="to identify subfolders you want to keep")
-    p.add_argument('for_out', type=argparse.FileType('w'))
-    p.add_argument('rev_out', type=argparse.FileType('w'))
-    p.add_argument('top_dirs', nargs='+', help="top directories from BMC")
-    p.add_argument('--verbose', '-v', action='store_true')
-    args = p.parse_args()
-
+def folder(dir_pos_regex, for_out, rev_out, top_dirs, verbose=False):
     for_fq_paths = []
     rev_fq_paths = []
     names = []
-    for top_dir in args.top_dirs:
-        new_for, new_rev, new_names = fastq_paths_in_directory(top_dir, args.dir_pos_regex)
+    for top_dir in top_dirs:
+        new_for, new_rev, new_names = fastq_paths_in_directory(top_dir, dir_pos_regex)
         for_fq_paths += new_for
         rev_fq_paths += new_rev
         names += new_names
 
-    if args.verbose:
+    if verbose:
         for f, r, n in zip(for_fq_paths, rev_fq_paths, names):
             print(f, r, n, sep='\t')
 
-    SeqIO.write(renamed_entries(for_fq_paths, names), args.for_out, 'fastq')
-    SeqIO.write(renamed_entries(rev_fq_paths, names), args.rev_out, 'fastq')
+    SeqIO.write(renamed_entries(for_fq_paths, names), for_out, 'fastq')
+    SeqIO.write(renamed_entries(rev_fq_paths, names), rev_out, 'fastq')
