@@ -5,6 +5,8 @@ Note that this only works for 4-line fastq's. I ditched the Bio.SeqIO because it
 confusing when you have multiple files open.
 '''
 
+import re
+
 def extract_number(header):
     m = re.match("read(\d+);?", header)
     return int(m.groups()[0])
@@ -67,7 +69,7 @@ class TsvRecords(Records):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.record = first_line
+        self.record = self.first_line
 
     def read_number(self):
         return extract_number(self.record.split("\t")[0])
