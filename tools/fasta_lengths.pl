@@ -22,6 +22,9 @@ while (<>) {
     }
 }
 
+# process the last entry
+$tally{$len}++;
+
 my @lens = sort { $b <=> $a } keys %tally;
 for my $l (@lens) { say "$l\t$tally{$l}"; }
 
