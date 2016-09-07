@@ -75,14 +75,27 @@ class Tabler:
         for otu, counts in sorted_otus_abunds:
             output.write("\t".join([otu] + [str(table[sample].get(otu, 0)) for sample in samples]) + "\n")
 
+    @staticmethod
+    def check_membership_format(x, fn):
+        for val in x.values():
+            if type(val) is not str:
+                raise RuntimeError("membership file {} is not a hash of strings".format(fn))
+            break
+
+    @staticmethod
+    def check_provenances_format(x, fn):
+        for val in x.values():
+            if type(val) is not dict:
+                raise RuntimeError("provenances file {} is not a hash of hashes".format(fn))
+            break
+
     @classmethod
     def otu_table(cls, provenances, membership, output, samples=None, rename=False):
         # get the index
         with open(provenances) as f:
             provenances_dict = yaml.load(f)
 
-        with open(membership) as f:
-            membership_dict = yaml.load(f)
+        cls.check_provenances_format(provenances_dict, provenances)
 
         cls.table(provenances_dict, membership_dict, output, samples, rename)
 
@@ -101,14 +114,18 @@ class Tabler:
         if not force and len(existing_files) > 0:
             raise RuntimeError('some output files would be overwritten: {}'.format(existing_files))
 
-        # load in the provenances
+        # load in the provenances first, since it will apply to all the memberships
         with open(provenances) as f:
             provenances_dict = yaml.load(f)
+
+        cls.check_provenances_format(provenances_dict, provenances)
 
         # load each membership file and do its output
         for membership, output_fn in zip(memberships, output_names):
             with open(membership) as f:
                 membership_dict = yaml.load(f)
+
+            cls.check_membership_format(membership_dict, membership)
 
             with open(output_fn, 'w') as f:
                 cls.table(provenances_dict, membership_dict, f, samples, rename)

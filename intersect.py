@@ -6,7 +6,8 @@ confusing when you have multiple files open.
 '''
 
 def extract_number(header):
-    return int(header.lstrip('read'))
+    m = re.match("read(\d+);?", header)
+    return int(m.groups()[0])
 
 def peek(input_fh, output_fh):
     first_line = next(input_fh)
