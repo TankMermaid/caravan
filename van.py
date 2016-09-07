@@ -98,14 +98,16 @@ def parse_args(args=None):
     sp_len = sp.add_parser('length', help='truncate at a specific length', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     sp_len.add_argument('length', type=int, help='length at which to truncate')
     sp_len.add_argument('fastx', help='input file')
-    sp_len.add_argument('--input_format', '-t', choices=['fasta', 'fastq'], default='fastq')
+    sp_len.add_argument('--from', '-f', dest='input_format', choices=['fasta', 'fastq'], default='fastq', help='input format')
     sp_len.add_argument('--keep', '-k', action='store_true', help='keep shorter sequences? otherwise discard')
+    sp_len.add_argument('--to', '-t', dest='output_format', choices=['fasta', 'fastq'], default='fasta', help='output format')
     sp_len.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='truncated fastx')
     sp_len.set_defaults(func=truncate.length)
 
     sp_tail = sp.add_parser('tail', help='truncate a tail of low-quality nucleotides', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     sp_tail.add_argument('quality', type=int, help='quality score (probably 2 = #)')
     sp_tail.add_argument('fastq', type=argparse.FileType('r'), help='input file')
+    sp_tail.add_argument('--to', '-t', dest='output_format', choices=['fasta', 'fastq'], default='fasta', help='output format')
     sp_tail.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='truncated fastq')
     sp_tail.set_defaults(func=truncate.tail)
 
@@ -113,7 +115,7 @@ def parse_args(args=None):
     p.add_argument('fastx', help='input fastx')
     p.add_argument('--min_counts', '-m', type=int, default=0, help='number of times a sequence must appear to be kept')
     p.add_argument('--index', '-i', type=argparse.FileType('w'), help='output yaml index file')
-    p.add_argument('--input_format', '-t', choices=['fasta', 'fastq'], default='fasta')
+    p.add_argument('--from', '-f', dest='input_format', choices=['fasta', 'fastq'], default='fasta', help='input format')
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='dereplicated fasta')
     p.set_defaults(func=derep.Dereplicator)
 
@@ -192,8 +194,11 @@ def parse_args(args=None):
     args = parser.parse_args(args)
     opts = vars(args)
 
-    # remove the "func" option from the parser results
-    func = opts.pop('func')
+    if len(opts) == 0:
+        raise RuntimeError("incomplete command line; try adding -h or --help")
+    else:
+        # remove the "func" option from the parser results
+        func = opts.pop('func')
 
     # replace any filenames "-" with stdin
     if "-" in opts.values():
