@@ -26,14 +26,21 @@ def merge(forward, reverse, max_diffs, size, size_var, output, stagger=False):
 def merged_reads(for_recs, rev_recs, max_diffs, min_size, max_size, stagger=False):
     for for_rec, rev_rec in zip(for_recs, rev_recs):
         rc_rev_rec = rev_rec.reverse_complement()
-        best_diffs, best_overlap = best_merge_position(for_rec, rc_rev_rec, min_size, max_size, stagger=stagger)
+        result = best_merge_position(for_rec, rc_rev_rec, min_size, max_size, stagger=stagger)
 
-        if best_diffs <= max_diffs:
-            yield merged_at(for_rec, rc_rev_rec, best_overlap, stagger=stagger)
+        if result is not None:
+            best_diffs, best_overlap = result
+            if best_diffs <= max_diffs:
+                yield merged_at(for_rec, rc_rev_rec, best_overlap, stagger=stagger)
 
 def best_merge_position(for_rec, rev_rec, min_size, max_size, stagger=False):
     read_lens = len(for_rec) + len(rev_rec)
-    window = range(read_lens - max_size, read_lens - min_size)
+
+    # only allow positive windows
+    window = [w for w in range(read_lens - max_size, read_lens - min_size + 1) if w > 0]
+
+    if len(window) == 0:
+        return None
 
     if not stagger:
         results = [(hamming_distance(for_rec[-overlap: ], rev_rec[0: overlap]), overlap) for overlap in window]
@@ -93,6 +100,7 @@ def consensus_base_quality(seq1, seq2, quals1, quals2):
     each_base = zip(seq1, seq2, quals1, quals2)
     each_merged_base = [consensus_one_base_quality(*base) for base in each_base]
     new_seq, new_qual = zip(*each_merged_base)
+
     return "".join(new_seq), list(new_qual)
 
 def merge_consensus(x, y):
