@@ -89,7 +89,7 @@ def parse_args(args=None):
     p.add_argument('fastq', help='input fastq')
     p.add_argument('--maxee', '-e', default=2.0, type=float, help='discard reads with > E expected errors')
     p.add_argument('--output', '-o', default=sys.stdout, help='output filtered fasta')
-    p.add_argument('--output_format', '-t', choices=['fasta', 'fastq'], default='fasta')
+    p.add_argument('--to', '-t', dest='output_format', choices=['fasta', 'fastq'], default='fasta', help='output format')
     p.set_defaults(func=qfilter.qfilter)
 
     p = subparser('truncate', help='trim sequences')
