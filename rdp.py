@@ -2,7 +2,7 @@
 parse fixrank files output by classifier.jar
 '''
 
-import csv, re, itertools, yaml
+import csv, re, itertools, yaml, os.path
 
 rank_abbreviations = ['k', 'p', 'c', 'o', 'f', 'g']
 rank_abbr_map = {'k': 'domain', 'p': 'phylum', 'c': 'class', 'o': 'order', 'f': 'family', 'g': 'genus'}
@@ -99,7 +99,7 @@ class FixrankParser:
         # the rest of the entries should divide into triplets
         if (len(entries) - 2) % 3 != 0:
             raise RuntimeError("could not parse fixrank with fields {}".format(entries))
-        
+
         entry_triplets = zip(*[iter(entries[2:])] * 3)
         ranks = [cls.parse_triplet(t) for t in entry_triplets]
 
@@ -195,9 +195,18 @@ class FixrankParser:
         return {a: open(re.sub(repl, a, output_base), 'w') for a in rank_abbreviations}
 
     @classmethod
-    def parse_file_all_ranks(cls, fixrank, output_base, repl, min_conf):
-        handles = cls.substituted_filehandles(output_base, repl)
-        mappings = cls.parse_lines_all_ranks(fixrank, min_conf)
+    def parse_file_all_ranks(cls, fixrank, output_dir, output_base, repl, min_conf):
+        # if the output_dir is not specified, figure it out from the fixrank
+        if output_dir is None:
+            output_dir = os.path.dirname(fixrank)
+
+        # send the output files to the new output directory
+        output_prefix = os.path.join(output_dir, output_base)
+
+        handles = cls.substituted_filehandles(output_prefix, repl)
+
+        with open(fixrank) as f:
+            mappings = cls.parse_lines_all_ranks(f, min_conf)
 
         for a in rank_abbreviations:
             yaml.dump(mappings[a], handles[a], default_flow_style=False)

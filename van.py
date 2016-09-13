@@ -127,14 +127,15 @@ def parse_args(args=None):
     p.set_defaults(func=rdp.FixrankParser.parse_file)
 
     p = subparser('rdpall', help='make mapping files for all taxonomic levels using RDP fixrank')
-    p.add_argument('fixrank', type=argparse.FileType('r'), help='input fixrank from classifier.jar')
+    p.add_argument('fixrank', help='input fixrank from classifier.jar')
+    p.add_argument('--output_dir', '-d', default=None, help='output file directory (default: same as input fixrank)')
     p.add_argument('--output_base', '-o', default='rdp_X.yaml', help='output filename base')
     p.add_argument('--repl', '-I', default='X', help='pattern in output base to replace with rank-letter')
     p.add_argument('--min_conf', '-m', type=float, default=0.8, help='minimum confidence to assign rank')
     p.set_defaults(func=rdp.FixrankParser.parse_file_all_ranks)
 
     p = subparser('denovo', help='cluster de novo with usearch')
-    p.add_argument('radius', type=float, help='0.0-100.0, recommended at most 3.0 = 97%% identity')
+    p.add_argument('identity', type=float, help='0.0-100.0, recommended at least 97%%')
     p.add_argument('fasta', help='input fasta')
     p.add_argument('output', help='representative sequences fasta')
     p.add_argument('--index', '-i', default=None, help='uparse file mapping seqs to otus?')
