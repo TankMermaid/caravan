@@ -135,7 +135,7 @@ def parse_args(args=None):
     p.set_defaults(func=rdp.FixrankParser.parse_file_all_ranks)
 
     p = subparser('denovo', help='cluster de novo with usearch')
-    p.add_argument('identity', type=float, help='0.0-100.0, recommended at least 97%%')
+    p.add_argument('percent_identity', type=float, help='0-100, recommended at least 97')
     p.add_argument('fasta', help='input fasta')
     p.add_argument('output', help='representative sequences fasta')
     p.add_argument('--index', '-i', default=None, help='uparse file mapping seqs to otus?')
@@ -146,7 +146,7 @@ def parse_args(args=None):
     p = subparser('ref', help='compare a fasta to a reference database')
     p.add_argument('fasta', help='query fasta file')
     p.add_argument('db', help='database fasta file')
-    p.add_argument('sid', help='minimum identity between query and database seqs (range: 0.0 to 1.0)')
+    p.add_argument('percent_identity', type=float, help='minimum identity between query and database seqs (0-100)')
     p.add_argument('b6', help='blast6 output')
     p.set_defaults(func=usearch.Usearcher().search)
 

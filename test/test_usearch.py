@@ -22,8 +22,8 @@ class TestMerge:
         assert out == self.expect_out
 
 class TestDenovo:
-    opts = {'radius': '3.0', 'fasta': 'foo.fa', 'output': 'otu.fa', 'index': 'otu.up'}
-    expect_out = ['usearch', '-cluster_otus', 'foo.fa', '-otu_radius_pct', '3.0', '-otus', 'otu.fa', '-uparseout', 'otu.up']
+    opts = {'percent_identity': 97.5, 'fasta': 'foo.fa', 'output': 'otu.fa', 'index': 'otu.up'}
+    expect_out = ['usearch', '-cluster_otus', 'foo.fa', '-otu_radius_pct', '2.5', '-otus', 'otu.fa', '-uparseout', 'otu.up']
 
     def test_correct(self):
         out = usearch.Usearcher(debug=True).cluster_denovo(**self.opts)
@@ -31,19 +31,31 @@ class TestDenovo:
 
     def test_raise(self):
         new_opts = dict(self.opts)
-        new_opts['radius'] = 97.0
+        new_opts['percent_identity'] = 90
+        with pytest.raises(RuntimeError):
+            usearch.Usearcher(debug=True).cluster_denovo(**new_opts)
+
+    def test_raise_negative(self):
+        new_opts = dict(self.opts)
+        new_opts['percent_identity'] = -1
+        with pytest.raises(RuntimeError):
+            usearch.Usearcher(debug=True).cluster_denovo(**new_opts)
+
+    def test_raise_over100(self):
+        new_opts = dict(self.opts)
+        new_opts['percent_identity'] = 101
         with pytest.raises(RuntimeError):
             usearch.Usearcher(debug=True).cluster_denovo(**new_opts)
 
     def test_override(self):
         new_opts = dict(self.opts)
-        new_opts['radius'] = 97.0
+        new_opts['percent_identity'] = 90
         new_opts['force'] = True
         out = usearch.Usearcher(debug=True).cluster_denovo(**new_opts)
-        assert out == ['usearch', '-cluster_otus', 'foo.fa', '-otu_radius_pct', '97.0', '-otus', 'otu.fa', '-uparseout', 'otu.up']
+        assert out == ['usearch', '-cluster_otus', 'foo.fa', '-otu_radius_pct', '10.0', '-otus', 'otu.fa', '-uparseout', 'otu.up']
 
 class TestSearch:
-    opts = {'fasta': 'foo.fa', 'db': 'db.fa', 'sid': '0.9', 'b6': 'bar.b6'}
+    opts = {'fasta': 'foo.fa', 'db': 'db.fa', 'percent_identity': 90.0, 'b6': 'bar.b6'}
     expect_out = ['usearch', '-usearch_global', 'foo.fa', '-db', 'db.fa', '-id', '0.9', '-strand', 'both', '-blast6out', 'bar.b6', '-output_no_hits']
 
     def test_correct(self):
