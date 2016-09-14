@@ -1,13 +1,13 @@
 # Template Snakefile for single-end read processing
 # How to use this file:
-#  1. Adjust the file structure configuration
-#  2. Save this as a personalized template
+#  1. Copy the snakemake-config.json.template to snakemake-config.json
+#  2. Edit the values in snakemake-config.json
 #  3. Copy this file to your work directory as 'Snakefile'
-#  4. Adjust the preprocessing parameters, OTU calling parameters,
+#  4. Adjust the parameters
 #  5. Call 'snakemake folders' to create the folder structure
 #  6. Call 'snakemake'
 #
-#  Requirements: pynast, the greengenes database, my rdp_classify.py script
+#  Requirements: snakemake, the greengenes database, my rdp_classify.py script
 
 # parameters for preprocessing
 INPUT_FILE = "filename of input fastq with primer removed"
@@ -18,10 +18,7 @@ MAXEE = 1.5 # maximum number of errors for quality filtering
 DENOVO_IDS = [97, 99] # percent identities for de novo clustering
 GG_IDS = [97, 99] # percent identities for greengenes reference clustering
 
-# configuration for your file structure
-VAN = "location of van.py"
-PYNAST_TEMPLATE = "location of core_set_aligned.fasta.imputed"
-GG_DIR = "location of gg_13_5_otus/rep_set_aligned"
+configfile: "location of your snakemake-config.json file"
 
 # enumerate output files
 OUTS = ["otu/gg/gg{}".format(x) for x in GG_IDS] + \
@@ -41,7 +38,7 @@ rule truncate:
     output:
         "proc/trunc.fq"
     shell:
-        "{VAN} truncate length {LENGTH} -t fastq {input} > {output}"
+        "{config[van]} truncate length {LENGTH} -t fastq {input} > {output}"
 
 rule filter:
     input:
@@ -49,7 +46,7 @@ rule filter:
     output:
         "proc/filter.fa"
     shell:
-        "{VAN} filter -e {MAXEE} {input} > {output}"
+        "{config[van]} filter -e {MAXEE} {input} > {output}"
 
 rule derep:
     input:
@@ -57,15 +54,15 @@ rule derep:
     output:
         derep = "derep.fa", prov = "prov.yaml"
     shell:
-        "{VAN} derep {input} -i {output.prov} -o {output.derep}"
+        "{config[van]} derep {input} -i {output.prov} -o {output.derep}"
 
 rule denovo:
     input:
         "derep.fa"
     output:
-        fasta = "otu/denovo/denovo{id}.fa", b6 = "otu/denovo/denovo{id}.b6"
+        fasta = "otu/denovo/denovo{id}.fa", uparse = "otu/denovo/denovo{id}.up"
     shell:
-        "{VAN} denovo {wildcards.id} {input} {output.fasta} -i {output.b6}"
+        "{config[van]} denovo {wildcards.id} {input} {output.fasta} -i {output.uparse}"
 
 rule fixrank:
     input:
@@ -81,31 +78,25 @@ rule rdp:
     output:
         "otu/rdp/rdp_{rank}.yaml"
     shell:
-        "{VAN} rdp {input} {rank} > {output}"
-
-rule pynast:
-    input:
-        "derep.fa"
-    output:
-        fa = "otu/gg/derep-align.fa", log = "otu/gg/pynast.log", fail = "otu/gg/pynast-fail.fa"
-    shell:
-        "pynast -l {LENGTH} -t {PYNAST_TEMPLATE} -i {input} -a {output.fa} -g {output.log} -f {output.fail}"
+        "{config[van]} rdp {input} {wildcards.rank} > {output}"
 
 rule gg:
     input:
-        "otu/gg/derep-align.fa"
+        "derep.fa"
     output:
         "otu/gg/gg{id}.b6"
     shell:
-        "{VAN} ref {input} {GG_DIR}/{wildcards.id}_otus.fasta {wildcards.id} {output}"
+        "{config[van]} ref {input} {config[greengenes_dir]}/{wildcards.id}_otus.fasta {wildcards.id} {output}"
 
 rule parse:
     input:
-        "otu/{method}/{method}{id}.b6"
+        "otu/{method}/{method}{id}.{ext}"
     output:
         "otu/{method}/{method}{id}.yaml"
+    wildcard_constraints:
+        ext="(b6|up)"
     shell:
-        "{VAN} parse {input} -o {output}"
+        "{config[van]} parse {input} -o {output}"
 
 rule tables:
     input:
@@ -113,4 +104,4 @@ rule tables:
     output:
         "{method}.counts"
     shell:
-        "{VAN} otu_table {input.prov} {input.membership} > {output}"
+        "{config[van]} otu_table {input.prov} {input.membership} > {output}"
