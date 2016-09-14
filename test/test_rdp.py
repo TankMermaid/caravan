@@ -83,7 +83,7 @@ class TestRanksAtConfidence(WithEntries):
 
 class TestRanksToRank:
     def test_correct(self):
-        sid, lin = rdp.FixrankParser.parse_entries(['seq1', '', 'K', 'domain', '1.0', 'P', 'phylum', '0.5', 'C', 'class', '1.0'])
+        sid, lin = rdp.FixrankParser.parse_entries(['seq1', '', 'K', 'domain', '1.0', 'P', 'phylum', '0.5', 'C', 'class', '1.0', 'O', 'order', '1.0', 'F', 'family', '1.0', 'G', 'genus', '1.0'])
         assert lin.ranks_to_rank('phylum') == [rdp.FixrankRank('domain', 'K', 1.0), rdp.FixrankRank('phylum', 'P', 0.5)]
 
 class TestTrimToRank:
