@@ -26,7 +26,7 @@ class Usearcher:
             except subprocess.CalledProcessError as e:
                 # if there is an error, look for the line just below "fatal error"
                 err_lines = e.output.decode().split("\n")
-                
+
                 fatal_error = '---Fatal error---'
                 invalid_command = 'Invalid command line'
                 if fatal_error in err_lines:
@@ -35,7 +35,7 @@ class Usearcher:
                 elif invalid_command in err_lines:
                     err_i = err_lines.index(invalid_command)
                     desc_line = err_lines[err_i + 1]
-                
+
                 raise RuntimeError("when running with command '%s', usearch failed with message:\n%s" %(cmd_string, desc_line))
 
         return cmd
@@ -64,17 +64,20 @@ class Usearcher:
 
         return self.run(cmd)
 
-    def cluster_denovo(self, fasta, radius, output, index=None, rename=None, force=False):
+    def cluster_denovo(self, fasta, percent_identity, output, index=None, rename=None, force=False):
         # give some nice warnings or errors if weird percentages are being used
-        radius = float(radius)
+        if percent_identity < 0 or percent_identity > 100:
+            raise RuntimeError("invalid percent identity: '{}'".format(percent_identity))
+
+        radius = 100.0 - float(percent_identity)
         if radius > 3.0:
-            message = "usearch doesn't recommend clustering at radius {} (i.e., {}% difference)".format(radius, 100.0 - radius)
+            message = "usearch doesn't recommend clustering at radius {} (i.e., {}% difference)".format(radius, percent_identity)
             if force:
                 print("warning: " + message, file=sys.stderr)
             else:
                 raise RuntimeError(message + "; use -f to force")
         elif radius < 0.5:
-            message = "warning: your clustering radius {} (i.e., {}% difference) looks small".format(radius, 100.0 - radius)
+            message = "warning: your clustering radius {} (i.e., {}% difference) looks small".format(radius, percent_identity)
             print(message, file=sys.stderr)
 
         cmd = ['usearch', '-cluster_otus', fasta, '-otu_radius_pct', radius, '-otus', output]
@@ -90,7 +93,7 @@ class Usearcher:
     def cluster_smallmem(self, fasta, otuid, centroids=None, uc=None):
         if isinstance(otuid, int):
             otuid = '.%d' %(otuid)
-        
+
         cmd = ['usearch', '-cluster_smallmem', fasta, '-id', otuid]
 
         if centroids is not None:
@@ -127,7 +130,11 @@ class Usearcher:
 
         return self.run(cmd)
 
-    def search(self, fasta, db, sid, b6, not_matched=None, fasta_pairs=None, strand='both', no_hits=True):
+    def search(self, fasta, db, percent_identity, b6, not_matched=None, fasta_pairs=None, strand='both', no_hits=True):
+        if percent_identity < 0.0 or percent_identity > 100.0:
+            raise RuntimeError("invalid percent identity: '{}'".format(percent_identity))
+
+        sid = percent_identity / 100.0
         cmd = ['usearch', '-usearch_global', fasta, '-db', db, '-id', sid, '-strand', strand, '-blast6out', b6]
 
         if not_matched is not None: cmd += ['-notmatched', not_matched]
