@@ -26,7 +26,7 @@ class Tabler:
             if otu not in otu_abunds:
                 otu_abunds[otu] = 0
 
-            obj_type = type(provenances[seq]) 
+            obj_type = type(provenances[seq])
             if obj_type is not dict:
                 raise RuntimeError("malformed provenances file: sequence '{}' points to a non-dict object, type {}, with content {}".format(seq, obj_type, provenances[seq]))
 
@@ -65,7 +65,7 @@ class Tabler:
                         table[new_s] = table.pop(old_s)
             else:
                 samples = [line.split()[0] for line in open(samples)]
-            
+
         # sort otu names by decreasing abundance, then by name
         sorted_otus_abunds = sorted(otu_abunds.items(), key=lambda x: (-x[1], x[0]))
 
@@ -96,6 +96,9 @@ class Tabler:
             provenances_dict = yaml.load(f)
 
         cls.check_provenances_format(provenances_dict, provenances)
+
+        with open(membership) as f:
+            membership_dict = yaml.load(f)
 
         cls.table(provenances_dict, membership_dict, output, samples, rename)
 
