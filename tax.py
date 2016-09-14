@@ -2,34 +2,49 @@
 use a blast6 alignment file to get taxonomies
 '''
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import util
 
 class TaxAssigner:
     @staticmethod
-    def assign_b6_with_pickled_tax_dict(b6, db, output, no_hit_target='*', no_hit_tax='no_hit'):
+    def b6_line_to_query_hit(line):
+        query, hit = line.rstrip().split("\t")[0: 2]
+        query = util.strip_fasta_label(query)
+        return query, hit
+
+    @classmethod
+    def assign_b6_tax(cls, b6, db, output, no_hit_target='*', no_hit_tax='no_hit'):
         '''
         look up each reference id in a pickled database of names
 
         b6 : filename
             blast6 mapping from usearch
         db : filename
-            pickled dictionary gg_id => tax
+            tab-separated file {id => taxonomy}, like the Greengenes 97_otu_taxonomy.txt
         output : filehandle
-            output taxonomy list
+            membership yaml
         '''
 
-        raise RuntimeError("tax assignment not implemented")
+        # read the taxonomic database file
+        tax = dict([line.rstrip().split("\t") for line in db])
+        tax[no_hit_target] = no_hit_tax
 
-        with open(db) as f:
-            taxes = pickle.load(f)
+        # read the b6, extracting the queries (my OTU IDs) and hits (database OTU IDs)
+        for line in b6:
+            query, hit = cls.b6_line_to_query_hit(line)
 
-        taxes[no_hit_target] = no_hit_tax
+            try:
+                query_tax = tax[hit]
+            except KeyError:
+                raise RuntimeError("could not find taxonomy for '{}' in database".format(hit))
 
-        with open(b6) as f:
-            targets = [o['target_label'] for o in b6m.B6.parse_lines(f)]
+            # eliminate spaces
+            query_tax = query_tax.translate({ord(' '): None})
 
-        outs = [taxes[target] for target in targets]
-        output.write("\n".join(outs) + "\n")
+            # if the query is an integer, write it unquoted
+            try:
+                query = int(query)
+                fmt = '{}: {}'
+            except ValueError:
+                fmt = '{}: "{}"'
+
+            print(fmt.format(query, query_tax), file=output)

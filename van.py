@@ -152,10 +152,10 @@ def parse_args(args=None):
     p.set_defaults(func=usearch.Usearcher().search)
 
     p = subparser('tax', help='assign taxonomies based on reference alignment')
-    p.add_argument('b6', help='blast6 mapping')
-    p.add_argument('db', help='pickled {id => taxonomy} dict')
-    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output tax list')
-    p.set_defaults(func=tax.TaxAssigner.assign_b6_with_pickled_tax_dict)
+    p.add_argument('b6', type=argparse.FileType('r'), help='blast6 mapping')
+    p.add_argument('db', type=argparse.FileType('r'), help='tab-separated {id => taxonomy} file')
+    p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output membership yaml')
+    p.set_defaults(func=tax.TaxAssigner.assign_b6_tax)
 
     p = subparser('utax', help='assign taxonomies using utax (and options in utax.yaml)')
     p.add_argument('fastx')
