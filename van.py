@@ -124,6 +124,7 @@ def parse_args(args=None):
     p.add_argument('level', choices=rdp.rank_abbreviations, help='taxonomic level')
     p.add_argument('--output', '-o', default=sys.stdout, type=argparse.FileType('w'), help='output yaml')
     p.add_argument('--min_conf', '-m', type=float, default=0.8, help='minimum confidence to assign rank')
+    p.add_argument('--antisense', '-a', action='store_true', help='expect that reads were reversed?')
     p.set_defaults(func=rdp.FixrankParser.parse_file)
 
     p = subparser('rdpall', help='make mapping files for all taxonomic levels using RDP fixrank')

@@ -93,10 +93,7 @@ class FixrankParser:
         # first entry is sequence id
         sid_entry = cls.parse_sid_entry(entries[0])
 
-        # second entry should be blank
-        assert entries[1] == ""
-
-        # the rest of the entries should divide into triplets
+        # the entries (except the first two) should divide into triplets
         if (len(entries) - 2) % 3 != 0:
             raise RuntimeError("could not parse fixrank with fields {}".format(entries))
 
@@ -115,26 +112,28 @@ class FixrankParser:
             raise RuntimeError('could not parse ranks as fixrank; maybe you put in an allrank?')
 
     @classmethod
-    def parse_line(cls, line):
+    def parse_line(cls, line, antisense=False):
         '''parse a line into seq id and lineage'''
         entries = line.rstrip().split("\t")
 
-        # if the second entry is a dash (rather than blank), RDP used the reverse complement
-        # to do the classification, which is probably a bad sign, so throw out that seq
-        if entries[1] == '':
-            return cls.parse_entries(entries)
-        elif entries[1] == '-':
-            return None
-        else:
+        # a blank second entry means normal sense; a - means antisense
+        if entries[1] not in ['', '-']:
             raise RuntimeError("don't recognize field 2 '{}' in fixrank line: '{}'".format(entries[1], line))
 
+        # if we were expecting normal sense but got antisense (or vice versa), then
+        # the classification is poor, so we throw it out
+        if entries[1] == '' or antisense:
+            return cls.parse_entries(entries)
+        else:
+            return None
+
     @classmethod
-    def parse_lines(cls, lines, min_confidence=None, rank=None):
+    def parse_lines(cls, lines, min_confidence=None, rank=None, antisense=False):
         '''turn lines into a dictionary seq id => lineage string'''
 
         mapping = {}
         for line in lines:
-            res = cls.parse_line(line.rstrip())
+            res = cls.parse_line(line.rstrip(), antisense=antisense)
 
             # parse_line gives none if RDP used reverse complement
             if res is not None:
@@ -171,7 +170,7 @@ class FixrankParser:
         return mappings
 
     @classmethod
-    def parse_file(cls, fixrank, level, output, min_conf):
+    def parse_file(cls, fixrank, level, output, min_conf, antisense=False):
         '''
         Parse a fixrank file and output the mapping yaml
 
@@ -179,10 +178,11 @@ class FixrankParser:
         level : string, one of 'k', 'p', 'c', etc.
         output : write filehandle
         min_conf : float
+        antisense: bool
         '''
 
         rank = rank_abbr_map[level]
-        mapping = cls.parse_lines(fixrank, min_conf, rank=rank)
+        mapping = cls.parse_lines(fixrank, min_conf, rank=rank, antisense=antisense)
         yaml.dump(mapping, output, default_flow_style=False)
 
     @staticmethod
