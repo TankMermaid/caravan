@@ -37,6 +37,10 @@ fastq, reverse reads in a second, and the index reads (aka "barcode reads") in a
 If you do not have paired-end reads, you'll probably want to use `van.py truncate` to
 trim sequences by their quality or length.
 
+Note that, if using `van.py rdp` on a reverse read, you will want to use the `--antisense`
+option. Caravan throws out RDP classifications made using reverse complements because, if
+we don't expect a reverse complement, it's probably a bad classification.
+
 ## Documentation
 There is sparse documentation. Sorry. But the `--help` option is usually pretty explanatory.
 
