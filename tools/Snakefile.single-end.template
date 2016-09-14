@@ -1,0 +1,116 @@
+# Template Snakefile for single-end read processing
+# How to use this file:
+#  1. Adjust the file structure configuration
+#  2. Save this as a personalized template
+#  3. Copy this file to your work directory as 'Snakefile'
+#  4. Adjust the preprocessing parameters, OTU calling parameters,
+#  5. Call 'snakemake folders' to create the folder structure
+#  6. Call 'snakemake'
+#
+#  Requirements: pynast, the greengenes database, my rdp_classify.py script
+
+# parameters for preprocessing
+INPUT_FILE = "filename of input fastq with primer removed"
+LENGTH = 131 # length at which to trim sequences
+MAXEE = 1.5 # maximum number of errors for quality filtering
+
+# parameters for OTU calling
+DENOVO_IDS = [97, 99] # percent identities for de novo clustering
+GG_IDS = [97, 99] # percent identities for greengenes reference clustering
+
+# configuration for your file structure
+VAN = "location of van.py"
+PYNAST_TEMPLATE = "location of core_set_aligned.fasta.imputed"
+GG_DIR = "location of gg_13_5_otus/rep_set_aligned"
+
+# enumerate output files
+OUTS = ["otu/gg/gg{}".format(x) for x in GG_IDS] + \
+  ["otu/denovo/denovo{}".format(x) for x in DENOVO_IDS] + \
+  ["otu/rdp/rdp_{}".format(x) for x in ["k", "p", "c", "o", "f", "g"]]
+
+rule final:
+    input: expand("{out}.counts", out=OUTS)
+
+rule folders:
+    shell:
+        "mkdir -p proc otu/rdp otu/gg otu/denovo"
+
+rule truncate:
+    input:
+        INPUT_FILE
+    output:
+        "proc/trunc.fq"
+    shell:
+        "{VAN} truncate length {LENGTH} -t fastq {input} > {output}"
+
+rule filter:
+    input:
+        "proc/trunc.fq"
+    output:
+        "proc/filter.fa"
+    shell:
+        "{VAN} filter -e {MAXEE} {input} > {output}"
+
+rule derep:
+    input:
+        "proc/filter.fa"
+    output:
+        derep = "derep.fa", prov = "prov.yaml"
+    shell:
+        "{VAN} derep {input} -i {output.prov} -o {output.derep}"
+
+rule denovo:
+    input:
+        "derep.fa"
+    output:
+        fasta = "otu/denovo/denovo{id}.fa", b6 = "otu/denovo/denovo{id}.b6"
+    shell:
+        "{VAN} denovo {wildcards.id} {input} {output.fasta} -i {output.b6}"
+
+rule fixrank:
+    input:
+        "derep.fa"
+    output:
+        "otu/rdp/derep.fixrank"
+    shell:
+        "rdp_classify.py {input} {output}"
+
+rule rdp:
+    input:
+        "otu/rdp/derep.fixrank"
+    output:
+        "otu/rdp/rdp_{rank}.yaml"
+    shell:
+        "{VAN} rdp {input} {rank} > {output}"
+
+rule pynast:
+    input:
+        "derep.fa"
+    output:
+        fa = "otu/gg/derep-align.fa", log = "otu/gg/pynast.log", fail = "otu/gg/pynast-fail.fa"
+    shell:
+        "pynast -l {LENGTH} -t {PYNAST_TEMPLATE} -i {input} -a {output.fa} -g {output.log} -f {output.fail}"
+
+rule gg:
+    input:
+        "otu/gg/derep-align.fa"
+    output:
+        "otu/gg/gg{id}.b6"
+    shell:
+        "{VAN} ref {input} {GG_DIR}/{wildcards.id}_otus.fasta {wildcards.id} {output}"
+
+rule parse:
+    input:
+        "otu/{method}/{method}{id}.b6"
+    output:
+        "otu/{method}/{method}{id}.yaml"
+    shell:
+        "{VAN} parse {input} -o {output}"
+
+rule tables:
+    input:
+        membership = "{method}.yaml", prov = "prov.yaml"
+    output:
+        "{method}.counts"
+    shell:
+        "{VAN} otu_table {input.prov} {input.membership} > {output}"
